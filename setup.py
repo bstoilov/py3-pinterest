@@ -14,7 +14,7 @@ from setuptools import setup, Command
 NAME = 'py3-pinterest'
 PACKAGE = 'py3pin'
 DESCRIPTION = 'Unofficial pinterest api implemented in python 3'
-URL = 'https://github.com/bryand1/python-pinterest-api'
+URL = 'https://github.com/bstoilov/py3-pinterest'
 EMAIL = 'boriostoilov@gmail.com'
 AUTHOR = 'Borislav Stoilov'
 REQUIRES_PYTHON = '>=3.6.0'
