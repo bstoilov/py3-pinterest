@@ -1,6 +1,3 @@
-# Ignore everything
-*
-# But not these files...
-!.gitignore
-!*.py
-!py3pin/*
+.idea/**
+py3pin/__pycache__/**
+py3pin/data/**
