@@ -17,7 +17,7 @@ DESCRIPTION = 'Unofficial pinterest api implemented in python 3'
 URL = 'https://github.com/bstoilov/py3-pinterest'
 EMAIL = 'boriostoilov@gmail.com'
 AUTHOR = 'Borislav Stoilov'
-REQUIRES_PYTHON = '>=3.6.0'
+REQUIRES_PYTHON = '>=3.5.0'
 REQUIRED = ['requests', 'beautifulsoup4', 'requests-toolbelt']
 
 here = os.path.abspath(os.path.dirname(__file__))

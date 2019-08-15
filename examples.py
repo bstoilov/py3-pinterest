@@ -1,6 +1,14 @@
 from py3pin.Pinterest import Pinterest
 
-pinterest = Pinterest(email='your email goes here', password='password goes here', username='look in pinterest url')
+username = 'username'
+password = 'password'
+email = 'email'
+cred_root = 'some directory'
+# cred_root is the place the user sessions and cookies will be stored, you should specify this to avoid permission issues
+pinterest = Pinterest(email=email,
+                      password=password,
+                      username=username,
+                      cred_root='/home/kashon/py3pin')
 
 
 def login():

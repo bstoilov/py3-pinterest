@@ -48,7 +48,7 @@ DELETE_COMMENT = 'https://www.pinterest.com/_ngjs/resource/AggregatedCommentReso
 
 class Pinterest:
 
-    def __init__(self, password='', proxies=None, username='', email=''):
+    def __init__(self, password='', proxies=None, username='', email='', cred_root='data'):
         self.pin_cache = {}
         self.email = email
         self.username = username
@@ -58,7 +58,7 @@ class Pinterest:
 
         self.http = requests.session()
         self.proxies = proxies
-        self.data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data',
+        self.data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), cred_root,
                                       self.email) + os.sep
         if not os.path.isdir(self.data_path):
             os.makedirs(self.data_path)
@@ -130,7 +130,7 @@ class Pinterest:
         }
         return user_data
 
-    def boards(self, username=None, page_size=250):
+    def boards(self, username=None, page_size=50):
         if username is None:
             username = self.username
 
@@ -138,7 +138,7 @@ class Pinterest:
         options = {
             "page_size": page_size,
             "privacy_filter": "all",
-            "sort": "last_pinned_to",
+            "sort": "custom",
             "username": username,
             "isPrefetch": False,
             "include_archived": True,
@@ -148,10 +148,10 @@ class Pinterest:
             "bookmarks": [next_bookmark]
         }
 
-        url = self.req_builder.buildGet(url=BOARDS_RESOURCE, options=options, source_url='/')
+        url = self.req_builder.buildGet(url=BOARDS_RESOURCE, options=options, source_url='/cocococoho/boards/')
         result = self.get(url=url).json()
         bookmark = result['resource']['options']['bookmarks'][0]
-        print(bookmark)
+
         self.bookmark_manager.add_bookmark(primary='boards', secondary=username, bookmark=bookmark)
         boards = []
         for board in result['resource_response']['data']:
