@@ -44,4 +44,4 @@ for pin in board_pins:
     url = pin['image']
     indx = str(url).rfind('.')
     extension = str(url)[indx:]
-    download_image(url, '/home/kashon/images/' + pin['id'] + extension)
+    download_image(url, download_dir + pin['id'] + extension)
