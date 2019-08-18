@@ -1,8 +1,8 @@
 # py3-pinterest
 Unofficial Pinterest API implemented in python 3 that can do almost all pinterest tasks like comment, pin, repin, follow, unfollow and more.
-It is implemented by directly calling the pinterest servers, mimicing an actual browser, so you don't need pinterest API key.
+It is implemented by directly calling the pinterest servers, mimicking an actual browser, so you don't need pinterest API key.
 
-If you see any issues, or find bugs feel free to report them here on the git hub repo.
+If you see any issues, or find bugs feel free to report them here on the github repo.
 
 
 ## Install using pip
@@ -22,8 +22,8 @@ Make sure you specify a path with read/write persmissions.
 ### Login
 ```pinterest.login()```
 
-Logs you in and stored the cookies needed for further requests. Pinterest session hava several hours before they expire, if inacitve.
-If you keep making requests you will keep the session alive and you might not need to login, if you receive unauthorized error on api call, then you need to call this endpoint.
+Logs you in and stores the cookies needed for further requests. Pinterest session have several hours before they expire, if inacitve.
+If you keep making requests you will keep the session alive and you might not need to login, if you receive unauthorized error on api call, then you need to call this method.
 Keep in mind that too much login request might lock your account.
 
 ### Load profile

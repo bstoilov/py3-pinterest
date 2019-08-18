@@ -24,7 +24,7 @@ UNFOLLOW_BOARD_RESOURCE = 'https://www.pinterest.com/resource/BoardFollowResourc
 FOLLOW_USER_RESOURCE = 'https://www.pinterest.com/resource/UserFollowResource/create/'
 UNFOLLOW_USER_RESOURCE = 'https://www.pinterest.com/resource/UserFollowResource/delete/'
 USER_FOLLOWING_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/UserFollowingResource/get'
-USER_FOLLOWERS_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/UserFollowersResource/get'
+USER_FOLLOWERS_RESOURCE = 'https://www.pinterest.com/resource/UserFollowersResource/get'
 PIN_RESOURCE_CREATE = 'https://www.pinterest.com/resource/PinResource/create/'
 REPIN_RESOURCE_CREATE = 'https://www.pinterest.com/resource/RepinResource/create/'
 PIN_LIKE_RESOURCE = 'https://www.pinterest.com/resource/PinLikeResource/create/'
@@ -241,18 +241,21 @@ class Pinterest:
             following.append(entry)
         return following
 
-    def get_user_followers(self, username='', page_size=250):
+    def get_user_followers(self, username=None, page_size=250):
+        if username is None:
+            username = self.username
+
         next_bookmark = self.bookmark_manager.get_bookmark(primary='followers', secondary=username)
         if next_bookmark is '-end-':
             return []
         options = {
-            'isPrefetch': 'false',
-            'hide_find_friends_rep': 'true',
+            'isPrefetch': False,
+            'hide_find_friends_rep': True,
             'username': username,
             'page_size': page_size,
             'bookmarks': [next_bookmark]
         }
-        source_url = '/{}/_followers/'.format(self.email)
+        source_url = '/{}/_followers/'.format(self.username)
 
         url = self.req_builder.buildGet(url=USER_FOLLOWERS_RESOURCE, options=options, source_url=source_url)
         result = self.get(url=url).json()

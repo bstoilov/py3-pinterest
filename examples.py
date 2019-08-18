@@ -3,12 +3,13 @@ from py3pin.Pinterest import Pinterest
 username = 'username'
 password = 'password'
 email = 'email'
+# cred_root is the place the user sessions and cookies will be stored you should specify this to avoid permission issues
 cred_root = 'some directory'
-# cred_root is the place the user sessions and cookies will be stored, you should specify this to avoid permission issues
+
 pinterest = Pinterest(email=email,
                       password=password,
                       username=username,
-                      cred_root='/home/kashon/py3pin')
+                      cred_root=cred_root)
 
 
 def login():
@@ -120,7 +121,8 @@ def pin():
     image_url = 'image.url.com'
     description = 'this is auto pin'
     title = 'a bot did this'
-    return pinterest.pin(board_id=board_id, image_url=image_url, description=description, title=title)
+    link = 'destination link'
+    return pinterest.pin(board_id=board_id, image_url=image_url, description=description, title=title, link=link)
 
 
 def search():
