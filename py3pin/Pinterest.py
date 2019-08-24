@@ -228,7 +228,12 @@ class Pinterest:
 
         result = self.get(url=url).json()
         result = result['resource_response']
-        self.bookmark_manager.add_bookmark(primary='following', secondary=username, bookmark=result['bookmark'])
+
+        bookmark = '-end-'
+        if 'bookmark' in result:
+            bookmark = result['bookmark']
+
+        self.bookmark_manager.add_bookmark(primary='following', secondary=username, bookmark=bookmark)
 
         following = []
         for f in result['data']:
@@ -261,7 +266,12 @@ class Pinterest:
         result = self.get(url=url).json()
         result = result['resource_response']
 
-        self.bookmark_manager.add_bookmark(primary='followers', secondary=username, bookmark=result['bookmark'])
+        bookmark = '-end-'
+
+        if 'bookmark' in result:
+            bookmark = result['bookmark']
+
+        self.bookmark_manager.add_bookmark(primary='followers', secondary=username, bookmark=bookmark)
 
         followers = []
         for f in result['data']:
@@ -353,10 +363,10 @@ class Pinterest:
         resp = self.get(url=url).json()
         resp = resp['resource_response']
 
+        bookmark = '-end-'
         if 'bookmark' in resp:
             bookmark = resp['bookmark']
-        else:
-            bookmark = '-end-'
+
         self.bookmark_manager.add_bookmark(primary='pin_comments', secondary=pin_id, bookmark=bookmark)
 
         comments = []
@@ -526,8 +536,12 @@ class Pinterest:
 
         response = self.get(url=url).json()
 
-        next_bookmark = response['resource_response']['bookmark']
-        self.bookmark_manager.add_bookmark(primary='home_feed', bookmark=next_bookmark)
+        bookmark = '-end-'
+
+        if 'bookmark' in response['resource_response']:
+            bookmark = response['resource_response']['bookmark']
+
+        self.bookmark_manager.add_bookmark(primary='home_feed', bookmark=bookmark)
 
         feed_items = []
 
