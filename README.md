@@ -22,9 +22,8 @@ Make sure you specify a path with read/write persmissions.
 ### Login
 ```pinterest.login()```
 
-Logs you in and stores the cookies needed for further requests. Pinterest session have several hours before they expire, if inacitve.
-If you keep making requests you will keep the session alive and you might not need to login, if you receive unauthorized error on api call, then you need to call this method.
-Keep in mind that too much login request might lock your account.
+You no longer need to call this manually, 401 errors are handled and login is called internally.
+
 
 ### Load profile
 ```user_overview = pinterest.get_user_overview()```

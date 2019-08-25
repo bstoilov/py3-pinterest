@@ -4,17 +4,12 @@ username = 'username'
 password = 'password'
 email = 'email'
 # cred_root is the place the user sessions and cookies will be stored you should specify this to avoid permission issues
-cred_root = 'some directory'
+cred_root = 'cred_root'
 
 pinterest = Pinterest(email=email,
                       password=password,
                       username=username,
                       cred_root=cred_root)
-
-
-def login():
-    # don't spam this, or they will lock the account
-    return pinterest.login()
 
 
 def get_user_profile():

@@ -85,7 +85,12 @@ class Pinterest:
         csrftoken = self.http.cookies.get('csrftoken')
         if csrftoken:
             headers.update([('X-CSRFToken', csrftoken)])
+
         response = self.http.request(method, url, data=data, headers=headers, files=files, proxies=self.proxies)
+        if response.status_code == 401:
+            self.login()
+            response = self.http.request(method, url, data=data, headers=headers, files=files, proxies=self.proxies)
+
         response.raise_for_status()
         self.registry.update(Registry.Key.COOKIES, response.cookies)
         return response
@@ -111,6 +116,7 @@ class Pinterest:
         options = {"isPrefetch": 'false', "username": username, "field_set_key": "profile"}
         url = self.req_builder.buildGet(url=USER_RESOURCE, options=options, source_url='/')
         result = self.get(url=url).json()
+
         result = result['resource_response']['data']
 
         user_data = {
