@@ -12,9 +12,6 @@ pinterest = Pinterest(email=email,
                       username=username,
                       cred_root=cred_root)
 
-# login if needed
-# pinterest.login()
-
 # your boards, pick one
 boards = pinterest.boards()
 
