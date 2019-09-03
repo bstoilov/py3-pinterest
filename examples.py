@@ -6,6 +6,7 @@ email = 'email'
 # cred_root is the place the user sessions and cookies will be stored you should specify this to avoid permission issues
 cred_root = 'cred_root'
 
+
 pinterest = Pinterest(email=email,
                       password=password,
                       username=username,
@@ -13,7 +14,7 @@ pinterest = Pinterest(email=email,
 
 
 def get_user_profile():
-    return pinterest.get_user_overview()
+    return pinterest.get_user_overview(username='username')
 
 
 def get_user_boards():
@@ -49,12 +50,12 @@ def delete_pin():
 
 def follow():
     # even if you already follow this user a successful message is returned
-    return pinterest.follow_user(user_id='target_user_id', username='target_username')
+    return pinterest.follow_user(user_id='user_id', username='username')
 
 
 def unfollow():
     # even if you don't follow this user a successful message is returned
-    return pinterest.unfollow_user(user_id='target_user_id', username='target_username')
+    return pinterest.unfollow_user(user_id='user_id', username='username')
 
 
 def get_following():
@@ -63,7 +64,7 @@ def get_following():
 
     following = []
     following_batch = pinterest.get_following()
-    while len(following) > 0:
+    while len(following_batch) > 0:
         following += following_batch
         following_batch = pinterest.get_following()
     return following
@@ -72,26 +73,34 @@ def get_following():
 def get_followers():
     # you can get followers on any user, default is current user
     # pinterest.get_user_followers(username='some_user')
+    username = 'username'
 
     followers = []
-    followers_batch = pinterest.get_user_followers()
+    followers_batch = pinterest.get_user_followers(username=username)
     while len(followers_batch) > 0:
         followers += followers_batch
+        followers_batch = pinterest.get_user_followers(username=username)
     return followers
 
 
 def get_home_feed():
     # This is what pinterest displays on your home page
     # useful for auto repins
+    max_length = 100
     home_feed_pins = []
     home_feed_batch = pinterest.home_feed()
     while len(home_feed_batch) > 0:
         home_feed_pins += home_feed_batch
         home_feed_batch = pinterest.home_feed()
+        if len(home_feed_pins) > max_length:
+            break
+    return home_feed_pins
 
 
 def repin():
-    return pinterest.repin(board_id='board_id', pin_id='pin_id')
+    pin_id = 'pin_id'
+    board_id = 'board_id'
+    return pinterest.repin(board_id=board_id, pin_id=pin_id)
 
 
 def get_website_pinnable_images():
@@ -103,29 +112,40 @@ def get_board_pin_recommendations():
     # Recommended pins for board
     board_url = 'board_url'
     board_id = 'board_id'
+    max_len = 100
     rec_pins = []
     rec_batch = pinterest.board_recommendations(board_url=board_url, board_id=board_id)
     while len(rec_batch) > 0:
         rec_pins += rec_batch
+        if len(rec_pins) > max_len:
+            break
 
     return rec_pins
 
 
 def pin():
     board_id = 'board_id'
-    image_url = 'image.url.com'
+    image_url = 'image url'
     description = 'this is auto pin'
     title = 'a bot did this'
-    link = 'destination link'
+    link = 'https://www.google.com/'
     return pinterest.pin(board_id=board_id, image_url=image_url, description=description, title=title, link=link)
+
+
+def delete_pin():
+    pin_id = 'some pin id'
+    pinterest.delete_pin(pin_id=pin_id)
 
 
 def search():
     # current pinterest scopes are: pins, buyable_pins, my_pins, videos, users, boards
     results = []
+    max_results = 100
     search_batch = pinterest.search(scope='boards', query='food')
     while len(search_batch) > 0:
         results += search_batch
+        if len(results) > max_results:
+            break
 
     return search_batch
 

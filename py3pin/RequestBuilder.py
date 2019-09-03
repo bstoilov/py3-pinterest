@@ -13,7 +13,7 @@ class RequestBuilder:
             'data': json.dumps({
                 'options': options,
                 "context": context
-            }).replace(' ', ''),
+            }),
             '_': '%s' % int(time.time() * 1000)
         })
 
@@ -23,7 +23,7 @@ class RequestBuilder:
             'data': json.dumps({
                 'options': options,
                 "context": context
-            }).replace(' ', ''),
+            }),
             '_': '%s' % int(time.time() * 1000)
         })
 

@@ -67,6 +67,8 @@ class Pinterest:
         if self.old_cookies:
             self.http.cookies.update(self.old_cookies)
 
+        self.login_failed = False
+
     def request(self, method, url, data=None, files=None):
         headers = CaseInsensitiveDict([
             ('Accept', 'text/html,image/webp,image/apng,*/*;q=0.8'),
@@ -102,12 +104,22 @@ class Pinterest:
         return self.request('POST', url=url, data=data, files=files)
 
     def login(self):
+        if self.login_failed:
+            raise Exception("Wrong credentials")
         self.get(HOME_PAGE)
         self.get(LOGIN_PAGE)
         options = {'username_or_email': self.email, 'password': self.password}
         source_url = '/login/?referrer=home_page'
         data = self.req_builder.buildPost(options=options, source_url=source_url)
-        return self.post(url=CREATE_USER_SESSION, data=data).json()
+
+        response = {}
+        try:
+            response = self.post(url=CREATE_USER_SESSION, data=data)
+            response = response.json()
+        except Exception as e:
+            self.login_failed = True
+            raise Exception("Wrong credentials")
+        return response
 
     def get_user_overview(self, username=None):
         if username is None:
