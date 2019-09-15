@@ -1,12 +1,13 @@
 import json
 import os
+
 import requests
 import requests.cookies
-from requests.structures import CaseInsensitiveDict
-from py3pin.Registry import Registry
-from py3pin.RequestBuilder import RequestBuilder
 from bs4 import BeautifulSoup
 from py3pin.BookmarkManager import BookmarkManager
+from py3pin.Registry import Registry
+from py3pin.RequestBuilder import RequestBuilder
+from requests.structures import CaseInsensitiveDict
 
 AGENT_STRING = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) " \
                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
@@ -58,8 +59,7 @@ class Pinterest:
 
         self.http = requests.session()
         self.proxies = proxies
-        self.data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), cred_root,
-                                      self.email) + os.sep
+        self.data_path = os.path.join(cred_root,self.email) + os.sep
         if not os.path.isdir(self.data_path):
             os.makedirs(self.data_path)
         self.registry = Registry('%sregistry.dat' % self.data_path)
