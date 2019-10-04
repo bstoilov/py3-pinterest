@@ -143,10 +143,9 @@ def search():
     results = []
     max_results = 100
     search_batch = pinterest.search(scope='boards', query='food')
-    while len(search_batch) > 0:
+    while len(search_batch) > 0 and len(results) < max_results:
         results += search_batch
-        if len(results) > max_results:
-            break
+        search_batch = pinterest.search(scope='boards', query='food')
 
     return results
 
