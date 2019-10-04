@@ -4,3 +4,5 @@ py3pin/data/**
 build/**
 dist/**
 py3_pinterest.egg-info/**
+test.py
+cred_root/**

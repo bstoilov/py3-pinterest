@@ -10,7 +10,7 @@ If you see any issues, or find bugs feel free to report them here on the github 
 
 ## Functionalities
 
-### For working code examples see examples.py
+### NOTE: for each of the functionalities listed below there is a working example in examples.py.
 
 ### Create new instance of the API
 
@@ -35,7 +35,7 @@ You no longer need to call this manually, 401 errors are handled and login is ca
 If username is left blank, current logged in user will be used.
 
 ### Get board pins
-```board_batch = pinterest.boards()```
+```board_pins_batch = pinterest.board_feed(board_id=board_id, board_url=board_url)```
 
 ### Delete pin
 ```pinterest.delete_pin(pin_id='pin_id')```

@@ -6,7 +6,6 @@ email = 'email'
 # cred_root is the place the user sessions and cookies will be stored you should specify this to avoid permission issues
 cred_root = 'cred_root'
 
-
 pinterest = Pinterest(email=email,
                       password=password,
                       username=username,
@@ -134,11 +133,13 @@ def pin():
 
 def delete_pin():
     pin_id = 'some pin id'
-    pinterest.delete_pin(pin_id=pin_id)
+    return pinterest.delete_pin(pin_id=pin_id)
 
 
 def search():
-    # current pinterest scopes are: pins, buyable_pins, my_pins, videos, users, boards
+    # After change in pinterest API, you can no longer search for users
+    # Instead you need to search for something else and extract the user data from there.
+    # current pinterest scopes are: pins, buyable_pins, my_pins, videos, boards
     results = []
     max_results = 100
     search_batch = pinterest.search(scope='boards', query='food')
@@ -147,7 +148,7 @@ def search():
         if len(results) > max_results:
             break
 
-    return search_batch
+    return results
 
 
 def follow_board():
@@ -163,6 +164,7 @@ def unfollow_board():
 
 
 def invite():
+    # If user is already invited to the board, you get 403 error.
     board_url = 'board_url'
     board_id = 'board_id'
     target_user_id = 'user_id'
@@ -170,6 +172,7 @@ def invite():
 
 
 def delete_invite():
+    # If user is not invited to the board, you get 403 error.
     board_url = 'board_url'
     board_id = 'board_id'
     target_user_id = 'user_id'
