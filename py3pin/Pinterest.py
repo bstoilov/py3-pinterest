@@ -45,6 +45,10 @@ CREATE_COMMENT_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/AggregatedCo
 GET_PIN_COMMENTS_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/AggregatedCommentFeedResource/get'
 LOAD_PIN_URL_FORMAT = 'https://www.pinterest.com/pin/{}/'
 DELETE_COMMENT = 'https://www.pinterest.com/_ngjs/resource/AggregatedCommentResource/delete/'
+CONVERSATION_RESOURCE = 'https://www.pinterest.com/resource/ConversationsResource/get/'
+CONVERSATION_RESOURCE_CREATE = 'https://www.pinterest.com/resource/ConversationsResource/create/'
+LOAD_CONVERSATION = 'https://www.pinterest.com/resource/ConversationMessagesResource/get/'
+SEND_MESSAGE = 'https://www.pinterest.com/resource/ConversationMessagesResource/create/'
 
 
 class Pinterest:
@@ -59,7 +63,7 @@ class Pinterest:
 
         self.http = requests.session()
         self.proxies = proxies
-        self.data_path = os.path.join(cred_root,self.email) + os.sep
+        self.data_path = os.path.join(cred_root, self.email) + os.sep
         if not os.path.isdir(self.data_path):
             os.makedirs(self.data_path)
         self.registry = Registry('%sregistry.dat' % self.data_path)
@@ -607,6 +611,124 @@ class Pinterest:
             if pin_data is not None:
                 pins.append(pin_data)
         return pins
+
+    def initiate_conversation(self, user_ids=None, message='hi'):
+        headers = self._load_headers()
+        options = {
+            "user_ids": user_ids,
+            "text": message
+        }
+
+        data_obj = {
+            'options': options,
+            'context': {}
+        }
+
+        data = {
+            'source_url': '/',
+            'data': json.dumps(data_obj)
+        }
+
+        return requests.post(CONVERSATION_RESOURCE_CREATE, headers=headers, data=data)
+
+    def send_message(self, message='', conversation_id='', pin_id=''):
+        options = {
+            "conversation_id": conversation_id,
+            "text": message,
+            "pin": pin_id
+        }
+
+        data_obj = {
+            'options': options,
+            'context': {}
+        }
+
+
+        data = {
+            'source_url': '/',
+            'data': json.dumps(data_obj)
+        }
+
+        headers = self._load_headers()
+        return requests.post(url=SEND_MESSAGE, headers=headers, data=data)
+
+    def _load_headers(self):
+        cookies = self.registry.get(Registry.Key.COOKIES)
+        csrftoken = ''
+        cookie_str = ''
+        for c in cookies:
+            if c.name == 'csrftoken':
+                csrftoken = c.value
+            cookie_str += c.name + '=' + c.value + '; '
+        cookie_str = cookie_str.strip()
+
+        headers = {
+            'cookie': cookie_str,
+            'x-csrftoken': csrftoken,
+            'user-agent': AGENT_STRING
+        }
+
+        return headers
+
+    def load_conversation(self, conversation_id=''):
+        messages = []
+
+        message_batch = self._load_conversation_batch(conversation_id=conversation_id)
+        while len(message_batch) > 0:
+            messages += message_batch
+            message_batch = self._load_conversation_batch(conversation_id=conversation_id)
+
+        return messages
+
+    def _load_conversation_batch(self, conversation_id='', page_size=25):
+        next_bookmark = self.bookmark_manager.get_bookmark(primary='conversations', secondary=conversation_id)
+
+        if next_bookmark == '-end-':
+            return []
+
+        options = {
+            "isPrefetch": False,
+            "page_size": page_size,
+            "conversation_id": conversation_id,
+            "bookmarks": [next_bookmark]
+        }
+
+        url = self.req_builder.buildGet(url=LOAD_CONVERSATION, options=options)
+        response = self.get(url=url).json()
+
+        bookmark = response['resource']['options']['bookmarks'][0]
+        self.bookmark_manager.add_bookmark(primary='conversations', secondary=conversation_id, bookmark=bookmark)
+
+        return response['resource_response']['data']
+
+    def get_conversations(self):
+        conversations = []
+        conv_batch = self._get_conversation_batch()
+        while len(conv_batch) > 0:
+            conversations += conv_batch
+            conv_batch = self._get_conversation_batch()
+
+        return conversations
+
+    def _get_conversation_batch(self):
+        next_bookmark = self.bookmark_manager.get_bookmark(primary='conversations')
+
+        if next_bookmark == '-end-':
+            return []
+
+        options = {
+            "isPrefetch": False,
+            "field_set_key": "default",
+            "bookmarks": [next_bookmark]
+        }
+
+        url = self.req_builder.buildGet(url=CONVERSATION_RESOURCE, options=options)
+        response = self.get(url=url).json()
+
+        next_bookmark = response['resource']['options']['bookmarks'][0]
+        self.bookmark_manager.add_bookmark(primary='conversations', bookmark=next_bookmark)
+
+        return response['resource_response']['data']
 
 
 def extract_pins(results):
