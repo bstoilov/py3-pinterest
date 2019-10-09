@@ -37,7 +37,8 @@ def get_board_pins():
     feed_batch = pinterest.board_feed(board_id=board_id, board_url=board_url)
     while len(feed_batch) > 0:
         board_feed += feed_batch
-        feed_batch = pinterest.board_feed(board_id=board_id, board_url=board_url)
+        feed_batch = pinterest.board_feed(
+            board_id=board_id, board_url=board_url)
 
     return board_feed
 
@@ -113,7 +114,8 @@ def get_board_pin_recommendations():
     board_id = 'board_id'
     max_len = 100
     rec_pins = []
-    rec_batch = pinterest.board_recommendations(board_url=board_url, board_id=board_id)
+    rec_batch = pinterest.board_recommendations(
+        board_url=board_url, board_id=board_id)
     while len(rec_batch) > 0:
         rec_pins += rec_batch
         if len(rec_pins) > max_len:
@@ -129,11 +131,6 @@ def pin():
     title = 'a bot did this'
     link = 'https://www.google.com/'
     return pinterest.pin(board_id=board_id, image_url=image_url, description=description, title=title, link=link)
-
-
-def delete_pin():
-    pin_id = 'some pin id'
-    return pinterest.delete_pin(pin_id=pin_id)
 
 
 def search():
@@ -182,7 +179,8 @@ def get_board_invites():
     board_url = 'board_url'
     board_id = 'board_id'
     invites = []
-    invites_batch = pinterest.get_board_invites(board_url=board_url, board_id=board_id)
+    invites_batch = pinterest.get_board_invites(
+        board_url=board_url, board_id=board_id)
     while len(invites_batch) > 0:
         invites += invites_batch
     return invites
