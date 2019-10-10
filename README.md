@@ -128,6 +128,9 @@ Current pinterest scopes are: pins, buyable_pins, my_pins, videos, users, boards
 
 ```pinterest.load_pin(pin_id='pin_id')```
 
+### Send perosnal message
+```pinterest.send_message(conversation_id=conversation_id, pin_id="(pin_id)", message="hey")```
+
 
 
 
