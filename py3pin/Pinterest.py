@@ -8,6 +8,7 @@ from py3pin.BookmarkManager import BookmarkManager
 from py3pin.Registry import Registry
 from py3pin.RequestBuilder import RequestBuilder
 from requests.structures import CaseInsensitiveDict
+from pprint import  pprint
 
 AGENT_STRING = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) " \
                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
@@ -298,8 +299,7 @@ class Pinterest:
         for s in scripts:
             if 'pins' in s.text and 'aggregated_pin_data' in s.text:
                 pin_data = json.loads(s.text)
-
-        return pin_data['pins'][pin_id]
+        return pin_data['resourceResponses'][0]['response']['data']
 
     def get_comments(self, pin_id, page_size=50):
         pin_data = self.load_pin(pin_id=pin_id)
@@ -585,7 +585,18 @@ class Pinterest:
 
         url = self.req_builder.buildGet(url=GET_BOARD_SECTIONS, options=options)
         response = self.get(url=url).json()
-        return response['resource_response']['data']
+        return response['resource_response']['data']['ReactBoardFeedResource']
+
+    def get_section_pins(self, username='', board_name='', section_name=''):
+
+        url = 'https://www.pinterest.com/{}/{}/{}/'.format(username, board_name, section_name)
+        data = self.get(url=url)
+
+        soup = BeautifulSoup(data.text, 'html.parser')
+        script = soup.find("script", {"id": "initial-state"})
+        data = json.loads(script.text)['resources']['data']['ReactBoardFeedResource']
+        first_entry = next(iter(data.values()))
+        return first_entry['data']['section_pin_feed']
 
     def delete_board_section(self, section_id=''):
         options = {
@@ -593,3 +604,4 @@ class Pinterest:
         }
         data = self.req_builder.buildPost(options=options)
         return self.post(url=BOARD_SECTION_EDIT_RESOURCE, data=data)
+
