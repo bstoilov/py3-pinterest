@@ -8,7 +8,6 @@ from py3pin.BookmarkManager import BookmarkManager
 from py3pin.Registry import Registry
 from py3pin.RequestBuilder import RequestBuilder
 from requests.structures import CaseInsensitiveDict
-from pprint import  pprint
 
 AGENT_STRING = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) " \
                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
@@ -604,4 +603,3 @@ class Pinterest:
         }
         data = self.req_builder.buildPost(options=options)
         return self.post(url=BOARD_SECTION_EDIT_RESOURCE, data=data)
-
