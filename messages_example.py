@@ -83,4 +83,4 @@ def send_message(username, message):
         # pinterest.send_message(conversation_id=conversation_id, pin_id="(pin_id)", message="hey")
 
 
-send_message(username='hknives', message='hi2')
+send_message(username='username', message='Hi')
