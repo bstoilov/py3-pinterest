@@ -7,7 +7,7 @@ class RequestBuilder:
     def __init__(self):
         pass
 
-    def buildPost(self, options, source_url="/", context={}):
+    def buildPost(self, options, source_url='/', context=None):
         return self.url_encode({
             'source_url': source_url,
             'data': json.dumps({
@@ -17,7 +17,7 @@ class RequestBuilder:
             '_': '%s' % int(time.time() * 1000)
         })
 
-    def buildGet(self, url, options, source_url="/", context={}):
+    def buildGet(self, url, options, source_url='/', context=None):
         data = self.url_encode({
             'source_url': source_url,
             'data': json.dumps({

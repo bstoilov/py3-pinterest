@@ -39,6 +39,6 @@ board = boards[0]
 # we chose the first board but you can chose any board you like
 
 for user in target_users:
-    pinterest.invite(board_id=board['id'], board_url=board['url'], user_id=user['id'])
+    pinterest.invite(board_id=board['id'], user_id=user['id'])
     # Instead of break you need to implement some kind of pause mechanism in order not to get blocked by pinterest
     break

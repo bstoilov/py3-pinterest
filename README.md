@@ -8,9 +8,8 @@ If you see any issues, or find bugs feel free to report them here on the github 
 ## Install using pip
 ```pip install py3-pinterest```
 
-## Functionalities
 
-### NOTE: for each of the functionalities listed below there is a working example in examples.py.
+### NOTE: for each of the functionalities listed below there is a working example under the project root.
 
 ### Create new instance of the API
 
@@ -19,29 +18,71 @@ If you see any issues, or find bugs feel free to report them here on the github 
 cred_root is the dir (automatically created if missing) that will store some cookies nad sessions, so you don't need to login before each request.
 Make sure you specify a path with read/write persmissions.
 
-### Login
+
+# The following features are currently supported
+
+## Login
+Login will store auth cookies for later use. These cookies are usually valid for ~15 days, then you will start getting 403 and 401 errors, which means you need to call login again. 
+
 ```pinterest.login()```
 
-You no longer need to call this manually, 401 errors are handled and login is called internally.
 
 
-### Load profile
-```user_overview = pinterest.get_user_overview()```
+## Load profile
+You can load profile for currently logged in user or any user specified by username.
+
+```user_profile = pinterest.get_user_overview()```
 
 
-### Get boards
-```board_batch = pinterest.boards(username='username')```
+## Board and pin management
+
+### Get all boards of user:
+
+```boards = pinterest.boards(username='username')```
+
+### List all pins in board
+```pins = pinterest.board_feed(board_id=board_id)```
 
 If username is left blank, current logged in user will be used.
 
-### Get board pins
-```board_pins_batch = pinterest.board_feed(board_id=board_id, board_url=board_url)```
 
 ### Delete pin
 ```pinterest.delete_pin(pin_id='pin_id')```
 
-If there is no such pin 404 Not found is thrown
-If you don't have permissions to delete is 403 Forbidden is thrown.
+### Repin
+
+```pinterest.repin(board_id='board_id', pin_id='pin_id')```
+
+### Get pinnable images
+A pinterest feature they use to pin from websites
+
+```pinterest.get_pinnable_images(url='https://www.tumblr.com/search/food')```
+
+### Pin
+
+```pinterest.pin(board_id=board_id, image_url=image_url, description=description, title=title)```
+
+### Get home feed pins
+
+``` home_feed_batch = pinterest.home_feed()```
+
+### Get board recommendations (this is the 'more ideas' api)
+
+```rec_batch = pinterest.board_recommendations(board_id=board_id)```
+
+### Get pin by id
+
+```pinterest.load_pin(pin_id='pin_id')```
+
+### Section support
+```pinterest.create_board_section(board_id=board_id, section_name=section_name)```
+```pinterest.delete_board_section(section_id=section_id)```
+```pinterest.get_board_sections(board_id=board_id)```
+
+You can also pin and repin to sections.
+
+
+## Follow/Unfollow
 
 ### Follow
 ```pinterest.follow_user(user_id='target_user_id', username='target_username')```
@@ -67,51 +108,34 @@ If username is not provided current user will be used
 
 If username is not provided current user will be used
 
-### Get home feed pins
+### Follow board
 
-``` home_feed_batch = pinterest.home_feed()```
+```pinterest.follow_board(board_id=board_id)```
 
-### Get board recommendations (this is the 'more ideas' api)
+### Unfollow board
 
-```rec_batch = pinterest.board_recommendations(board_url=board_url, board_id=board_id)```
+```pinterest.unfollow_board(board_id=board_id)```
 
-### Repin
 
-```pinterest.repin(board_id='board_id', pin_id='pin_id')```
-
-### Get pinnable images
-
-```pinterest.get_pinnable_images(url='https://www.tumblr.com/search/food')```
-
-### Pin
-
-```pinterest.pin(board_id=board_id, image_url=image_url, description=description, title=title)```
-
-### Search
+## Search
 
 ```search_batch = pinterest.search(scope='boards', query='food')```
 
 Current pinterest scopes are: pins, buyable_pins, my_pins, videos, users, boards
 
-### Follow board
 
-```pinterest.follow_board(board_url=board_url, board_id=board_id)```
-
-### Unfollow board
-
-```pinterest.unfollow_board(board_url=board_url, board_id=board_id)```
-
+## User interactions
 ### Invite to board
 
-```pinterest.invite(board_id=board_id, board_url=board_url, user_id=target_user_id)```
+```pinterest.invite(board_id=board_id, user_id=target_user_id)```
 
 ### Delete board invite
 
-```pinterest.delete_invite(board_id=board_id, board_url=board_url, invited_user_id=target_user_id)```
+```pinterest.delete_invite(board_id=board_id, invited_user_id=target_user_id)```
 
 ### Get board invites
 
-```invites_batch = pinterest.get_board_invites(board_url=board_url, board_id=board_id)```
+```invites_batch = pinterest.get_board_invites(board_id=board_id)```
 
 ### Comment
 
@@ -124,9 +148,6 @@ Current pinterest scopes are: pins, buyable_pins, my_pins, videos, users, boards
 
 ```pinterest.get_comments(pin_id='pin_id')```
 
-### Get pin by id
-
-```pinterest.load_pin(pin_id='pin_id')```
 
 ### Send perosnal message
 ```pinterest.send_message(conversation_id=conversation_id, pin_id="(pin_id)", message="hey")```

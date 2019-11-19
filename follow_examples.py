@@ -51,13 +51,13 @@ boards = search_boards()
 # Follow boards
 for b in boards:
     print(b['url'])
-    pinterest.follow_board(board_id=b['id'], board_url=b['url'])
+    pinterest.follow_board(board_id=b['id'])
     # Instead of break you need a way to pause for some time in order to not get banned from pinterest.
     break
 
 users = search_users()
 
 for u in users:
-    pinterest.follow_user(user_id=u['id'], username=u['username'])
+    pinterest.follow_user(user_id=u['id'])
     # Instead of break you need a way to pause for some time in order to not get banned from pinterest.
     break

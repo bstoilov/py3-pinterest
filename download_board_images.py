@@ -1,16 +1,12 @@
 from py3pin.Pinterest import Pinterest
 import requests
 
-username = 'your username'
-password = 'your password'
-email = 'login email'
-cred_root = 'some dir'
 download_dir = 'dir where images will be downloaded'
 
-pinterest = Pinterest(email=email,
-                      password=password,
-                      username=username,
-                      cred_root=cred_root)
+pinterest = Pinterest(email='email',
+                      password='password',
+                      username='username',
+                      cred_root='cred_root')
 
 # your boards, pick one
 boards = pinterest.boards()
@@ -20,11 +16,12 @@ target_board = boards[0]
 
 # get all pins for the board
 board_pins = []
-pin_batch = pinterest.board_feed(board_id=target_board['id'], board_url=target_board['url'])
+pin_batch = pinterest.board_feed(board_id=target_board['id'])
+
 
 while len(pin_batch) > 0:
     board_pins += pin_batch
-    pin_batch = pinterest.board_feed(board_id=target_board['id'], board_url=target_board['url'])
+    pin_batch = pinterest.board_feed(board_id=target_board['id'])
 
 
 # this can download images by url
