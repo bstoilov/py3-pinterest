@@ -368,16 +368,17 @@ class Pinterest:
     def search(self, scope, query, page_size=250):
 
         next_bookmark = self.bookmark_manager.get_bookmark(primary='search', secondary=query)
+
         if next_bookmark == '-end-':
             return []
 
         terms = query.split(' ')
-        query = "%20".join(terms)
+        escaped_query = "%20".join(terms)
         term_meta_arr = []
         for t in terms:
             term_meta_arr.append('term_meta[]=' + t)
         term_arg = "%7Ctyped&".join(term_meta_arr)
-        source_url = '/search/{}/?q={}&rs=typed&{}%7Ctyped'.format(scope, query, term_arg)
+        source_url = '/search/{}/?q={}&rs=typed&{}%7Ctyped'.format(scope, escaped_query, term_arg)
         options = {
             "isPrefetch": False,
             "auto_correction_disabled": False,
@@ -392,6 +393,7 @@ class Pinterest:
         resp = self.get(url=url).json()
 
         bookmark = resp['resource']['options']['bookmarks'][0]
+
         self.bookmark_manager.add_bookmark(primary='search', secondary=query, bookmark=bookmark)
         return resp['resource_response']['data']['results']
 
