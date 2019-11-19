@@ -112,6 +112,16 @@ def pin(board_id='',
                          title=title, link=link)
 
 
+def upload_pin(board_id='',
+               section_id=None,
+               image_path='my_imag.png',
+               description='this is auto pin',
+               title='a bot did this',
+               link='https://www.google.com/'):
+    return pinterest.upload_pin(board_id=board_id, section_id=section_id, image_file=image_path,
+                                description=description, title=title, link=link)
+
+
 def search(max_items=100, scope='boards', query='food'):
     # After change in pinterest API, you can no longer search for users
     # Instead you need to search for something else and extract the user data from there.
@@ -184,3 +194,4 @@ def get_board_sections(board_id=''):
 
 def get_board_section_feed(username='', board_name='', section_name=''):
     return pinterest.get_section_pins(username=username, board_name=board_name, section_name=section_name)
+

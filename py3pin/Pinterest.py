@@ -2,7 +2,9 @@ import json
 import os
 
 import requests
+import mimetypes
 import requests.cookies
+from requests_toolbelt import MultipartEncoder
 from bs4 import BeautifulSoup
 from py3pin.BookmarkManager import BookmarkManager
 from py3pin.Registry import Registry
@@ -52,6 +54,7 @@ SEND_MESSAGE = 'https://www.pinterest.com/resource/ConversationMessagesResource/
 BOARD_SECTION_RESOURCE = 'https://www.pinterest.com/resource/BoardSectionResource/create/'
 GET_BOARD_SECTIONS = 'https://www.pinterest.com/resource/BoardSectionsResource/get/'
 BOARD_SECTION_EDIT_RESOURCE = 'https://www.pinterest.com/resource/BoardSectionEditResource/delete/'
+UPLOAD_IMAGE = 'https://www.pinterest.com/upload-image/'
 
 
 class Pinterest:
@@ -75,7 +78,7 @@ class Pinterest:
         if cookies is not None:
             self.http.cookies.update(cookies)
 
-    def request(self, method, url, data=None, files=None):
+    def request(self, method, url, data=None, files=None, extra_headers=None):
         headers = CaseInsensitiveDict([
             ('Referer', HOME_PAGE),
             ('X-Requested-With', 'XMLHttpRequest'),
@@ -86,6 +89,10 @@ class Pinterest:
         if csrftoken:
             headers.update([('X-CSRFToken', csrftoken)])
 
+        if extra_headers is not None:
+            for h in extra_headers:
+                headers.update([(h, extra_headers[h])])
+
         response = self.http.request(method, url, data=data, headers=headers, files=files, proxies=self.proxies)
         response.raise_for_status()
         self.registry.update(Registry.Key.COOKIES, response.cookies)
@@ -94,8 +101,8 @@ class Pinterest:
     def get(self, url):
         return self.request('GET', url=url)
 
-    def post(self, url, data=None, files=None):
-        return self.request('POST', url=url, data=data, files=files)
+    def post(self, url, data=None, files=None, headers=None):
+        return self.request('POST', url=url, data=data, files=files, extra_headers=headers)
 
     def login(self):
         self.get(HOME_PAGE)
@@ -261,6 +268,11 @@ class Pinterest:
 
         return self.post(url=PIN_RESOURCE_CREATE, data=data)
 
+    def upload_pin(self, board_id, image_file, description='', link='', title='', section_id=None):
+        image_url = self._upload_image(image_file=image_file).json()['image_url']
+        return self.pin(board_id=board_id, description=description, image_url=image_url, link=link, title=title,
+                 section_id=section_id)
+
     def repin(self, board_id, pin_id, section_id=None):
         options = {
             "board_id": board_id,
@@ -271,6 +283,22 @@ class Pinterest:
         source_url = '/pin/{}/'.format(pin_id)
         data = self.req_builder.buildPost(options=options, source_url=source_url)
         return self.post(url=REPIN_RESOURCE_CREATE, data=data)
+
+    def _upload_image(self, image_file):
+        file_name = os.path.basename(image_file)
+        mime_type = mimetypes.guess_type(image_file)[0]
+
+        form_data = MultipartEncoder(fields={
+            'img': ('%s' % file_name, open(image_file, 'rb'), mime_type)
+        })
+
+        headers = {
+            'Content-Length': '%s' % form_data.len,
+            'Content-Type': form_data.content_type,
+            'X-UPLOAD-SOURCE': 'pinner_uploader'
+        }
+
+        return self.post(url=UPLOAD_IMAGE, data=form_data, headers=headers)
 
     def delete_pin(self, pin_id):
         options = {"id": pin_id}
