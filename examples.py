@@ -192,6 +192,6 @@ def get_board_sections(board_id=''):
     return pinterest.get_board_sections(board_id=board_id)
 
 
-def get_board_section_feed(username='', board_name='', section_name=''):
-    return pinterest.get_section_pins(username=username, board_name=board_name, section_name=section_name)
+def get_board_section_feed(section_id=''):
+    return pinterest.get_section_pins(section_id=section_id)
 
