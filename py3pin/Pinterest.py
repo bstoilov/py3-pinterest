@@ -54,6 +54,7 @@ SEND_MESSAGE = 'https://www.pinterest.com/resource/ConversationMessagesResource/
 BOARD_SECTION_RESOURCE = 'https://www.pinterest.com/resource/BoardSectionResource/create/'
 GET_BOARD_SECTIONS = 'https://www.pinterest.com/resource/BoardSectionsResource/get/'
 BOARD_SECTION_EDIT_RESOURCE = 'https://www.pinterest.com/resource/BoardSectionEditResource/delete/'
+GET_BOARD_SECTION_PINS = 'https://www.pinterest.com/resource/BoardSectionPinsResource/get/'
 UPLOAD_IMAGE = 'https://www.pinterest.com/upload-image/'
 
 
@@ -271,7 +272,7 @@ class Pinterest:
     def upload_pin(self, board_id, image_file, description='', link='', title='', section_id=None):
         image_url = self._upload_image(image_file=image_file).json()['image_url']
         return self.pin(board_id=board_id, description=description, image_url=image_url, link=link, title=title,
-                 section_id=section_id)
+                        section_id=section_id)
 
     def repin(self, board_id, pin_id, section_id=None):
         options = {
@@ -614,18 +615,27 @@ class Pinterest:
 
         url = self.req_builder.buildGet(url=GET_BOARD_SECTIONS, options=options)
         response = self.get(url=url).json()
-        return response['resource_response']['data']['ReactBoardFeedResource']
+        return response['resource_response']['data']
 
-    def get_section_pins(self, username='', board_name='', section_name=''):
+    def get_section_pins(self, section_id='', page_size=250):
+        options = {
+            "isPrefetch": False,
+            "field_set_key": "react_grid_pin",
+            "is_own_profile_pins": True,
+            "page_size": page_size,
+            "redux_normalize_feed": True,
+            "section_id": section_id
+        }
 
-        url = 'https://www.pinterest.com/{}/{}/{}/'.format(username, board_name, section_name)
-        data = self.get(url=url)
+        url = self.req_builder.buildGet(url=GET_BOARD_SECTION_PINS, options=options)
+        response = self.get(url=url).json()
+        data = response['resource_response']['data']
+        pins = []
 
-        soup = BeautifulSoup(data.text, 'html.parser')
-        script = soup.find("script", {"id": "initial-state"})
-        data = json.loads(script.text)['resources']['data']['ReactBoardFeedResource']
-        first_entry = next(iter(data.values()))
-        return first_entry['data']['section_pin_feed']
+        for d in data:
+            if 'pinner' in d:
+                pins.append(d)
+        return pins
 
     def delete_board_section(self, section_id=''):
         options = {
