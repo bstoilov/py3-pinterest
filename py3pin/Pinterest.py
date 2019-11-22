@@ -54,6 +54,7 @@ SEND_MESSAGE = 'https://www.pinterest.com/resource/ConversationMessagesResource/
 BOARD_SECTION_RESOURCE = 'https://www.pinterest.com/resource/BoardSectionResource/create/'
 GET_BOARD_SECTIONS = 'https://www.pinterest.com/resource/BoardSectionsResource/get/'
 BOARD_SECTION_EDIT_RESOURCE = 'https://www.pinterest.com/resource/BoardSectionEditResource/delete/'
+GET_BOARD_SECTION_PINS = 'https://www.pinterest.com/resource/BoardSectionPinsResource/get/'
 UPLOAD_IMAGE = 'https://www.pinterest.com/upload-image/'
 
 
@@ -625,8 +626,8 @@ class Pinterest:
             "redux_normalize_feed": True,
             "section_id": section_id
         }
-        url = 'https://www.pinterest.com/resource/BoardSectionPinsResource/get/'
-        url = self.req_builder.buildGet(url=url, options=options)
+
+        url = self.req_builder.buildGet(url=GET_BOARD_SECTION_PINS, options=options)
         response = self.get(url=url).json()
         data = response['resource_response']['data']
         pins = []
