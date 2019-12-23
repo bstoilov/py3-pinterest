@@ -6,8 +6,8 @@ pinterest = Pinterest(email='email',
                       cred_root='cred_root')
 
 
-# login will obtain and store cookies for further use, they last around 15 days.
-# pinterest.login()
+# login is required to perform further actions. Login will obtain and store cookies for further use, they last around 15 days.
+pinterest.login()
 
 
 def get_user_profile():
