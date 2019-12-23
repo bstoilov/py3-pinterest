@@ -22,7 +22,7 @@ Make sure you specify a path with read/write persmissions.
 # The following features are currently supported
 
 ## Login
-Login will store auth cookies for later use. These cookies are usually valid for ~15 days, then you will start getting 403 and 401 errors, which means you need to call login again. 
+Login is required to permit actions to the Pinterest servers. Login will store auth cookies for later use. These cookies are usually valid for ~15 days, then you will start getting 403 and 401 errors, which means you need to call login again. 
 
 ```pinterest.login()```
 
