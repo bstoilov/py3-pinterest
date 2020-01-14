@@ -180,6 +180,15 @@ def load_pin_by_id(pin_id=''):
 # pin(board_id=board_id, section_id=section_id)
 
 
+def create_board(name='',
+               description='',
+               category='other',
+               privacy='public',
+               layout='default'):
+    return pinterest.create_board(name=name, description=description, category=category,
+                                privacy=privacy, layout=layout)
+
+
 def create_board_section(board_id='', section_name=''):
     return pinterest.create_board_section(board_id=board_id, section_name=section_name)
 
