@@ -180,6 +180,7 @@ def load_pin_by_id(pin_id=''):
 # pin(board_id=board_id, section_id=section_id)
 
 
+# Careful with category names. They have different names than as shown on Pinterest
 def create_board(name='',
                description='',
                category='other',
