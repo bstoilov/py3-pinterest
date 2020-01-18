@@ -62,14 +62,14 @@ Example:
 ```py
 import json
 
-pin_response = upload_pin(board_id="778489554276995995",
-             image_path="test.png",
-             description="TESTING PIN FUNCTIONALITY WITH LINK",
-             title="Foobar Barfood",
+pin_response = upload_pin(board_id='',
+             image_path='test.png',
+             description='TESTING PIN FUNCTIONALITY WITH ID FETCHING',
+             title='Foobar Barfood',
              section_id=None,
              link="www.geekoverdrivestudio.com")
 
-response_data = json.loads(pin.content)
+response_data = json.loads(pin_response.content)
 ```
 
 Some helpful notes on the response:
