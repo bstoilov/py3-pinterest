@@ -67,7 +67,7 @@ pin_response = upload_pin(board_id='',
              description='TESTING PIN FUNCTIONALITY WITH ID FETCHING',
              title='Foobar Barfood',
              section_id=None,
-             link="www.geekoverdrivestudio.com")
+             link='')
 
 response_data = json.loads(pin_response.content)
 ```
