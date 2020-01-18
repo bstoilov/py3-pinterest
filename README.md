@@ -53,6 +53,44 @@ If username is left blank, current logged in user will be used.
 
 ```pinterest.repin(board_id='board_id', pin_id='pin_id')```
 
+### Get ID of created pin, section, or board
+
+All functions return the post/get data from the request. If you dig a little deeper by going myrequest.content you get the actual HTML response, which can then be turned into a dict by using JSON.
+
+Example:
+
+```py
+import json
+
+pin_response = upload_pin(board_id="778489554276995995",
+             image_path="test.png",
+             description="TESTING PIN FUNCTIONALITY WITH LINK",
+             title="Foobar Barfood",
+             section_id=None,
+             link="www.geekoverdrivestudio.com")
+
+response_data = json.loads(pin.content)
+```
+
+Some helpful notes on the response:
+Everything is stored inside the "resource_response" key. You can use that and grab all sorts of data like so:
+
+```py
+# This is how you would access this information when creating a pin
+
+id = response_data["resource_response"]["data"]["id"]
+board_id = response_data["resource_response"]["data"]["board"]["id"]
+section_id = response_data["resource_response"]["data"]["section"]["id"]
+pinner_username = response_data["resource_response"]["data"]["pinner"]["username"]
+pinner_id = response_data["resource_response"]["data"]["pinner"]["id"]
+
+# If you wanted to access this information in a different circumstance,
+# keep in mind that whatever your creating should be the first level under "data"
+# I.e, I created a board, and I want to get the board ID. It would now be:
+
+board_id = response_data["resource_response"]["data"]["id"]
+```
+
 ### Get pinnable images
 A pinterest feature they use to pin from websites
 
