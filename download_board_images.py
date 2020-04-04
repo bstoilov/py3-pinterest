@@ -1,7 +1,7 @@
 from py3pin.Pinterest import Pinterest
 import requests
 
-download_dir = 'dir where images will be downloaded'
+download_dir = '.'
 
 pinterest = Pinterest(email='email',
                       password='password',
@@ -35,7 +35,7 @@ def download_image(url, path):
 
 # download each pin image in the specified directory
 for pin in board_pins:
-    url = pin['image']
+    url = pin['images']['orig']['url']
     indx = str(url).rfind('.')
     extension = str(url)[indx:]
     download_image(url, download_dir + pin['id'] + extension)
