@@ -3,9 +3,9 @@ import requests
 
 download_dir = '.'
 
-pinterest = Pinterest(email='boriostoilov@gmail.com',
-                      password='Geni0us!',
-                      username='cocococoho',
+pinterest = Pinterest(email='email',
+                      password='password',
+                      username='username',
                       cred_root='cred_root')
 
 # your boards, pick one
