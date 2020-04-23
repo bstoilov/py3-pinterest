@@ -1,4 +1,7 @@
 # py3-pinterest
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/github/pipenv/locked/python-version/metabolize/rq-dashboard-on-heroku?style=flat)](https://img.shields.io/github/pipenv/locked/python-version/metabolize/rq-dashboard-on-heroku?style=flat)
+
 Unofficial Pinterest API implemented in python 3 that can do almost all pinterest tasks like comment, pin, repin, follow, unfollow and more.
 It is implemented by directly calling the pinterest servers, mimicking an actual browser, so you don't need pinterest API key.
 
