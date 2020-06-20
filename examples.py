@@ -14,7 +14,6 @@ pinterest = Pinterest(email='email',
 # NOTE: Since login will store the cookies in local file you don't need to call it more then 3-4 times a month.
 # pinterest.login()
 
-
 def get_user_profile():
     return pinterest.get_user_overview(username='username')
 
@@ -197,6 +196,16 @@ def load_pin_by_id(pin_id=''):
 # to pin/repin to section you just need to provide section id parameter to the respective function
 # repin(board_id=board_id, section_id=section_id, pin_id='pin_id')
 # pin(board_id=board_id, section_id=section_id)
+
+
+# Careful with category names. They have different names than as shown on Pinterest
+def create_board(name='',
+               description='',
+               category='other',
+               privacy='public',
+               layout='default'):
+    return pinterest.create_board(name=name, description=description, category=category,
+                                privacy=privacy, layout=layout)
 
 
 def create_board_section(board_id='', section_name=''):

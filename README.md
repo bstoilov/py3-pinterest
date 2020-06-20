@@ -1,5 +1,8 @@
 # py3-pinterest
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Unofficial Pinterest API implemented in python 3 that can do all Pinterest tasks like comment, pin, repin, follow, unfollow and more.
+
 It is implemented by directly calling the pinterest servers, mimicking an actual browser, so you don't need pinterest API key.
 
 If you see any issues, or find bugs feel free to report them here on the github repo.
@@ -29,6 +32,8 @@ Pinterest(email='emai', password='pass', username='name', cred_root='cred_root',
 
 ## Login/Logout
 Login will store auth cookies for later use. These cookies are usually valid for ~15 days, then you will start getting 403 and 401 errors, which means you need to call login again. 
+## Login
+Login is required to permit actions to the Pinterest servers. Login will store auth cookies for later use. These cookies are usually valid for ~15 days, then you will start getting 403 and 401 errors, which means you need to call login again. 
 
 ```pinterest.login()```
 
@@ -60,6 +65,44 @@ If username is left blank, current logged in user will be used.
 ### Repin
 
 ```pinterest.repin(board_id='board_id', pin_id='pin_id')```
+
+### Get ID of created pin, section, or board
+
+All functions return the post/get data from the request. If you dig a little deeper by going myrequest.content you get the actual HTML response, which can then be turned into a dict by using JSON.
+
+Example:
+
+```py
+import json
+
+pin_response = upload_pin(board_id='',
+             image_path='test.png',
+             description='TESTING PIN FUNCTIONALITY WITH ID FETCHING',
+             title='Foobar Barfood',
+             section_id=None,
+             link='')
+
+response_data = json.loads(pin_response.content)
+```
+
+Some helpful notes on the response:
+Everything is stored inside the "resource_response" key. You can use that and grab all sorts of data like so:
+
+```py
+# This is how you would access this information when creating a pin
+
+id = response_data["resource_response"]["data"]["id"]
+board_id = response_data["resource_response"]["data"]["board"]["id"]
+section_id = response_data["resource_response"]["data"]["section"]["id"]
+pinner_username = response_data["resource_response"]["data"]["pinner"]["username"]
+pinner_id = response_data["resource_response"]["data"]["pinner"]["id"]
+
+# If you wanted to access this information in a different circumstance,
+# keep in mind that whatever your creating should be the first level under "data"
+# I.e, I created a board, and I want to get the board ID. It would now be:
+
+board_id = response_data["resource_response"]["data"]["id"]
+```
 
 ### Get pinnable images
 A pinterest feature they use to pin from websites
