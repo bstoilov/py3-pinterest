@@ -5,8 +5,13 @@ pinterest = Pinterest(email='email',
                       username='username',
                       cred_root='cred_root')
 
+# proxies example:
+# proxies = {"http":"http://username:password@proxy_ip:proxy_port"}
+# Pinterest(email='emai', password='pass', username='name', cred_root='cred_root', proxies=proxies)
+
 
 # login will obtain and store cookies for further use, they last around 15 days.
+# NOTE: Since login will store the cookies in local file you don't need to call it more then 3-4 times a month.
 # pinterest.login()
 
 
@@ -14,7 +19,7 @@ def get_user_profile():
     return pinterest.get_user_overview(username='username')
 
 
-def get_user_boards(username=None):
+def get_user_boards_batched(username=None):
     boards = []
     board_batch = pinterest.boards(username=username)
     while len(board_batch) > 0:
@@ -24,7 +29,11 @@ def get_user_boards(username=None):
     return boards
 
 
-def get_board_pins(board_id=''):
+def get_boards(username=None):
+    return pinterest.boards_all(username=username)
+
+
+def get_board_pins_batched(board_id=''):
     board_feed = []
     feed_batch = pinterest.board_feed(board_id=board_id)
     while len(feed_batch) > 0:
@@ -49,7 +58,7 @@ def unfollow(user_id=''):
     return pinterest.unfollow_user(user_id=user_id)
 
 
-def get_following(username=None, max_items=500):
+def get_following_batched(username=None, max_items=500):
     # you can get following on any user, default is current user
     # pinterest.get_following(username='some_user')
 
@@ -62,7 +71,12 @@ def get_following(username=None, max_items=500):
     return following
 
 
-def get_followers(username=None, max_items=500):
+def get_following(username=None):
+    # Gets full following list of a user
+    return pinterest.get_following_all(username=username)
+
+
+def get_followers_batched(username=None, max_items=500):
     followers = []
     followers_batch = pinterest.get_user_followers(username=username)
     while len(followers_batch) > 0 and len(followers) < max_items:
@@ -70,6 +84,11 @@ def get_followers(username=None, max_items=500):
         followers_batch = pinterest.get_user_followers(username=username)
 
     return followers
+
+
+def get_followers(username=None):
+    # Gets a full list of user followers
+    return pinterest.get_user_followers_all(username=username)
 
 
 def get_home_feed(max_items=100):
@@ -194,4 +213,3 @@ def get_board_sections(board_id=''):
 
 def get_board_section_feed(section_id=''):
     return pinterest.get_section_pins(section_id=section_id)
-

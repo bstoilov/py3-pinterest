@@ -18,6 +18,7 @@ AGENT_STRING = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) " \
 HOME_PAGE = 'https://www.pinterest.com/'
 LOGIN_PAGE = 'https://www.pinterest.com/login/?referrer=home_page'
 CREATE_USER_SESSION = 'https://www.pinterest.com/resource/UserSessionResource/create/'
+DELETE_USER_SESSION = 'https://www.pinterest.com/resource/UserSessionResource/delete/'
 USER_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/UserResource/get'
 BOARD_PICKER_RESOURCE = 'https://www.pinterest.com/resource/BoardPickerBoardsResource/get'
 BOARDS_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/BoardsResource/get'
@@ -60,7 +61,7 @@ UPLOAD_IMAGE = 'https://www.pinterest.com/upload-image/'
 
 class Pinterest:
 
-    def __init__(self, password='', proxies=None, username='', email='', cred_root='data'):
+    def __init__(self, password='', proxies=None, username='', email='', cred_root='data', user_agent=None):
         self.email = email
         self.username = username
         self.password = password
@@ -68,6 +69,7 @@ class Pinterest:
         self.bookmark_manager = BookmarkManager()
         self.http = requests.session()
         self.proxies = proxies
+        self.user_agent = user_agent
 
         data_path = os.path.join(cred_root, self.email) + os.sep
         if not os.path.isdir(data_path):
@@ -79,13 +81,16 @@ class Pinterest:
         if cookies is not None:
             self.http.cookies.update(cookies)
 
+        if self.user_agent is None:
+            self.user_agent = AGENT_STRING
+
     def request(self, method, url, data=None, files=None, extra_headers=None):
         headers = CaseInsensitiveDict([
             ('Referer', HOME_PAGE),
             ('X-Requested-With', 'XMLHttpRequest'),
             ('Accept', 'application/json'),
             ('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8'),
-            ('User-Agent', AGENT_STRING)])
+            ('User-Agent', self.user_agent)])
         csrftoken = self.http.cookies.get('csrftoken')
         if csrftoken:
             headers.update([('X-CSRFToken', csrftoken)])
@@ -106,6 +111,14 @@ class Pinterest:
         return self.request('POST', url=url, data=data, files=files, extra_headers=headers)
 
     def login(self):
+        """
+        Logs user in with the provided credentials
+        User session is stored in the 'cred_root' folder
+        and reused so there is no need to login every time.
+        Pinterest sessions lasts for about 15 days
+        Ideally you need to call this method 3-4 times a month at most.
+        :return python dict object describing the pinterest response
+        """
         self.get(HOME_PAGE)
         self.get(LOGIN_PAGE)
 
@@ -117,7 +130,22 @@ class Pinterest:
         data = self.req_builder.buildPost(options=options, source_url='/login/?referrer=home_page')
         return self.post(url=CREATE_USER_SESSION, data=data)
 
+    def logout(self):
+        """
+        Logs current user out. Takes few seconds for the session to be invalidated on pinterest's side
+        """
+        options = {
+            'disable_auth_failure_redirect': True
+        }
+
+        data = self.req_builder.buildPost(options=options)
+        return self.post(url=DELETE_USER_SESSION, data=data)
+
     def get_user_overview(self, username=None):
+        """
+        :param username target username, if left blank current user is assumed
+        :return python dict describing the pinterest user profile response
+        """
         if username is None:
             username = self.username
 
@@ -132,6 +160,14 @@ class Pinterest:
         return result['resource_response']['data']
 
     def boards(self, username=None, page_size=50):
+        """
+        The data returned is chunked, this comes from pinterest'a rest api.
+        Some users might have huge number of boards that is why it make sense to chunk the data.
+        In order to obtain all boards this method needs to be called until it returns empty list
+        :param username: target username, if left blank current user is assumed
+        :param page_size: controls the batch size for each request
+        :return python dict describing all the boards of a user.
+        """
         if username is None:
             username = self.username
 
@@ -157,7 +193,31 @@ class Pinterest:
         self.bookmark_manager.add_bookmark(primary='boards', secondary=username, bookmark=bookmark)
         return result['resource_response']['data']
 
+    def boards_all(self, username=None):
+        """
+        Obtains all boards of a user.
+        NOTE: some users might have hube amounts of boards.
+        In such cases 'boards' method (which is batched) should be used in order to avoid memory issues
+        :param username: target user, if left blank current user is assumed
+        :return all boards of a user
+        """
+        boards = []
+        board_batch = self.boards(username=username)
+        while len(board_batch) > 0:
+            boards += board_batch
+            board_batch = self.boards(username=username)
+
+        return boards
+
     def create_board(self, name, description='', category='other', privacy='public', layout='default'):
+        """
+        Creates a new board and returns the response from pinterest.
+        :param name: board name (should be unique per user)
+        :param description: board description
+        :param category: if you have defined categories (it is not visible to external users)
+        :param privace: can be public or private
+        :param layout: looks like a legacy parameter but is it mandatory (can be left as
+        """
         options = {
             "name": name,
             "description": description,
@@ -173,26 +233,54 @@ class Pinterest:
         return self.post(url=CREATE_BOARD_RESOURCE, data=data)
 
     def follow_board(self, board_id):
+        """
+        Follows a board with current user.
+        :param board_id: the id of the board to follow
+        :return python dict with the pinterest response
+        """
         options = {"board_id": board_id}
         data = self.req_builder.buildPost(options=options)
         return self.post(url=FOLLOW_BOARD_RESOURCE, data=data)
 
     def unfollow_board(self, board_id):
+        """
+        UnFollows a board with current user.
+        :param board_id: the id of the board to follow
+        :return python dict with the pinterest response
+        """
         options = {"board_id": board_id}
         data = self.req_builder.buildPost(options=options)
         return self.post(url=UNFOLLOW_BOARD_RESOURCE, data=data)
 
     def follow_user(self, user_id):
+        """
+        Follows a user with current user.
+        :param user_id: the id of the user to follow
+        :return python dict with the pinterest response
+        """
         options = {"user_id": user_id}
         data = self.req_builder.buildPost(options=options)
         return self.post(url=FOLLOW_USER_RESOURCE, data=data)
 
     def unfollow_user(self, user_id):
+        """
+        UnFollows a user with current user.
+        :param user_id: the id of the user to follow
+        :return python dict with the pinterest response
+        """
         options = {"user_id": user_id}
         data = self.req_builder.buildPost(options=options)
         return self.post(url=UNFOLLOW_USER_RESOURCE, data=data)
 
     def get_following(self, username=None, page_size=250):
+        """
+        Get all users following this particular user.
+        The response of this method is batched, meaning it needs to be called
+        until empty list is returned
+        :param username: target user, if left blank current user is assumed
+        :param page_size:
+        :return: python dict describing the 'following' list
+        """
         if username is None:
             username = self.username
 
@@ -222,7 +310,30 @@ class Pinterest:
 
         return result['data']
 
+    def get_following_all(self, username=None):
+        """
+        Obtains list of all users that the specified user follows.
+        NOTE: Some users might have huge following lists.
+        In such cases using 'get_following' (which is batched) is preferred.
+        :param username: target username
+        :return: python dict containing all following
+        """
+        following = []
+        following_batch = self.get_following(username=username)
+        while len(following_batch) > 0:
+            following += following_batch
+            following_batch = self.get_following(username=username)
+
+        return following
+
     def get_user_followers(self, username=None, page_size=250):
+        """
+        Obtains a list of user's followers.
+        The response from this method is batched, meaning it needs to be called until empty list is returned.
+        :param username: target username, is left blank current user is assumed
+        :param page_size: batch size
+        :return: python dict describing user followers
+        """
         if username is None:
             username = self.username
 
@@ -253,7 +364,33 @@ class Pinterest:
 
         return result['data']
 
+    def get_user_followers_all(self, username=None):
+        """
+        Obtains a list of all the followers a user has.
+        NOTE: Some users might have huge followers lists.
+        In such cases 'get_user_followers' should be used to avoid memory errors
+        :param username: target user, is left blank current user is assumed
+        :return: list of follower objects
+        """
+        followers = []
+        followers_batch = self.get_user_followers(username=username)
+        while len(followers_batch) > 0:
+            followers += followers_batch
+            followers_batch = self.get_user_followers(username=username)
+
+        return followers
+
     def pin(self, board_id, image_url, description='', link='', title='', section_id=None):
+        """
+        Perfoms a pin operation. If you want to upload local image use 'upload_pin'
+        :param board_id: id of the target board (current user should have rights to pin to is)
+        :param image_url: web url of an image (not local one)
+        :param description: pin description (can be blank)
+        :param link: link to include (can be blank)
+        :param title: title can be blank
+        :param section_id: board section should be previously defined and its optional
+        :return: python dict describing the pinterest response
+        """
         options = {
             "board_id": board_id,
             "image_url": image_url,
@@ -270,11 +407,21 @@ class Pinterest:
         return self.post(url=PIN_RESOURCE_CREATE, data=data)
 
     def upload_pin(self, board_id, image_file, description='', link='', title='', section_id=None):
+        """
+        This method is simmilar to 'pin' except the image for the pin is local file.
+        """
         image_url = self._upload_image(image_file=image_file).json()['image_url']
         return self.pin(board_id=board_id, description=description, image_url=image_url, link=link, title=title,
                         section_id=section_id)
 
     def repin(self, board_id, pin_id, section_id=None):
+        """
+        Repin/Save action
+        :param board_id: board id, current user should have right to pin to this board
+        :param pin_id: pin id to repin
+        :param section_id:  board section should be previously defined and its optional
+        :return: python dict describing the pinterest response
+        """
         options = {
             "board_id": board_id,
             "pin_id": pin_id,
@@ -302,12 +449,23 @@ class Pinterest:
         return self.post(url=UPLOAD_IMAGE, data=form_data, headers=headers)
 
     def delete_pin(self, pin_id):
+        """
+        Deletes a pint the user owne
+        :param pin_id: pin id to delete
+        :return: python dict describing the pinterest response
+        """
         options = {"id": pin_id}
         source_url = '/{}/'.format(self.username)
         data = self.req_builder.buildPost(options=options, source_url=source_url)
         return self.post(url=DELETE_PIN_RESOURCE, data=data)
 
     def comment(self, pin_id, text):
+        """
+        Put comment on a pin
+        :param pin_id: pin id to comment on
+        :param text: text of the comment
+        :return: python dict describing the pinterest response
+        """
         pin_data = self.load_pin(pin_id=pin_id)
         options = {
             "objectId": pin_data['aggregated_pin_data']['id'],
@@ -320,6 +478,11 @@ class Pinterest:
         return self.post(url=CREATE_COMMENT_RESOURCE, data=data)
 
     def load_pin(self, pin_id):
+        """
+        Loads full information about a pin
+        :param pin_id: pin id to load
+        :return: python dict describing the pinterest response
+        """
         resp = self.get(url=LOAD_PIN_URL_FORMAT.format(pin_id))
         soup = BeautifulSoup(resp.text, 'html.parser')
         scripts = soup.findAll('script')
@@ -327,9 +490,16 @@ class Pinterest:
         for s in scripts:
             if 'pins' in s.text and 'aggregated_pin_data' in s.text:
                 pin_data = json.loads(s.text)
-        return pin_data['resourceResponses'][0]['response']['data']
+        return pin_data['pins'][str(pin_id)]
 
     def get_comments(self, pin_id, page_size=50):
+        """
+        Get comments on a pin.
+        The response is batched, meaning this method should be called util empty list is returned
+        :param pin_id: target pin id
+        :param page_size:  batch size
+        :return: list of comment objects
+        """
         pin_data = self.load_pin(pin_id=pin_id)
 
         next_bookmark = self.bookmark_manager.get_bookmark(primary='pin_comments', secondary=pin_id)
@@ -357,18 +527,53 @@ class Pinterest:
 
         return resp['data']
 
+    def get_comments_all(self, pin_id):
+        """
+        Obtains all comments of a pin.
+        NOTE: IF pin has too many comments this might cause memory issues.
+        In such cases use 'get_comments' which is batched
+        :param pin_id:
+        :return: list of comment objects
+        """
+        results = []
+        search_batch = self.get_comments(pin_id=pin_id)
+        while len(search_batch) > 0:
+            results += search_batch
+            search_batch = self.get_comments(pin_id=pin_id)
+
+        return results
+
     def delete_comment(self, pin_id, comment_id):
+        """
+        Deletes a comment
+        :param pin_id: pin id to search the comment in
+        :param comment_id: comment id
+        :return:
+        """
         options = {"commentId": comment_id}
         source_url = "/pin/{}/".format(pin_id)
         data = self.req_builder.buildPost(options=options, source_url=source_url)
         return self.post(url=DELETE_COMMENT, data=data)
 
     def invite(self, board_id, user_id):
+        """
+        Invite a user to one of the current users boards
+        :param board_id: board to invite to
+        :param user_id: user to invite
+        :return: python dict describing the pinterest response
+        """
         options = {"board_id": board_id, "invited_user_ids": [user_id]}
         data = self.req_builder.buildPost(options=options)
         return self.post(url=BOARD_INVITE_RESOURCE, data=data)
 
     def get_board_invites(self, board_id, page_size=100):
+        """
+        Returns a list of users invited to the specified board.
+        This method is batched and needs to be called until empty list is returned.
+        :param board_id: id of target board
+        :param page_size: batch size
+        :return: list of board objects
+        """
         options = {
             "isPrefetch": False,
             "board_id": board_id,
@@ -384,7 +589,30 @@ class Pinterest:
 
         return resp['resource_response']['data']
 
+    def get_board_invites_all(self, board_id):
+        """
+        Obtains all invites of a board.
+        NOTE: If board has too many invites this might cause memory issues.
+        In such cases use 'get_board_invites' which is batched
+        :param board_id:
+        :return: list of board invite objects
+        """
+        results = []
+        search_batch = self.get_board_invites(board_id=board_id)
+        while len(search_batch) > 0:
+            results += search_batch
+            search_batch = self.get_board_invites(board_id=board_id)
+
+        return results
+
     def delete_invite(self, board_id, invited_user_id, also_block=False):
+        """
+        Deletes invite for a board
+        :param board_id: board id
+        :param invited_user_id: invited user id
+        :param also_block: you can also block the user (default false)
+        :return: python dict describing the pinterest response
+        """
         options = {
             "ban": also_block,
             "board_id": board_id,
@@ -395,6 +623,14 @@ class Pinterest:
         return self.post(url=BOARD_DELETE_INVITE_RESOURCE, data=data)
 
     def search(self, scope, query, page_size=250):
+        """
+        Gives access to pinterest search api
+        This method is batched, meaning is needs to be called until empty list is returned.
+        :param scope: can be pins, buyable_pins, my_pins, videos, boards
+        :param query: search phrase
+        :param page_size: batch size
+        :return: list of search results
+        """
 
         next_bookmark = self.bookmark_manager.get_bookmark(primary='search', secondary=query)
 
@@ -427,6 +663,14 @@ class Pinterest:
         return resp['resource_response']['data']['results']
 
     def board_recommendations(self, board_id='', page_size=50):
+        """
+        This gives the list of pins you see when you open a board and click on 'More Ideas'
+        This method is batched and needs to be called until empty list is returned in order to obtain all
+        of the results.
+        :param board_id: target board id
+        :param page_size: batch size
+        :return:
+        """
         next_bookmark = self.bookmark_manager.get_bookmark(primary='boards', secondary=board_id)
 
         if next_bookmark == '-end-':
@@ -448,6 +692,9 @@ class Pinterest:
         return response['resource_response']['data']
 
     def get_pinnable_images(self, url):
+        """
+        Simple API pinterest uses to suggest images from site.
+        """
         options = {"isPrefetch": 'false',
                    "url": url,
                    "source": "pin_create",
@@ -465,7 +712,13 @@ class Pinterest:
         return urls
 
     def home_feed(self, page_size=100):
-
+        """
+        This gives the list of pins you see when you open the pinterest home page.
+        This method is batched, in order to obtain all home feed items
+        it needs to be called until empty list is returned
+        :param page_size:
+        :return:
+        """
         next_bookmark = self.bookmark_manager.get_bookmark(primary='home_feed')
         if next_bookmark == '-end-':
             return []
@@ -494,6 +747,11 @@ class Pinterest:
         return response['resource_response']['data']
 
     def board_feed(self, board_id='', page_size=250):
+        """
+        Gives a list of all pins in a board.
+        This method is batched, meaning in order to obtain all pins in a board you need
+        to call it until empty list is returned.
+        """
         next_bookmark = self.bookmark_manager.get_bookmark(primary='board_feed', secondary=board_id)
 
         if next_bookmark == '-end-':
@@ -517,7 +775,11 @@ class Pinterest:
 
         return response['resource_response']['data']
 
-    def initiate_conversation(self, user_ids=None, message='hi'):
+    def initiate_conversation(self, user_ids, message='hi'):
+        """
+        Initiates a new conversation with one or more users
+        :return: python dict object describing the pinterest response
+        """
         options = {
             "user_ids": user_ids,
             "text": message
@@ -526,6 +788,9 @@ class Pinterest:
         return self.post(url=CONVERSATION_RESOURCE_CREATE, data=data)
 
     def send_message(self, message='', conversation_id='', pin_id=''):
+        """
+        Sends a new mesage to an already initiated conversation
+        """
         options = {
             "conversation_id": conversation_id,
             "text": message,
@@ -536,6 +801,9 @@ class Pinterest:
         return self.post(url=SEND_MESSAGE, data=data)
 
     def load_conversation(self, conversation_id=''):
+        """
+        Loads a list of all messages in a conversation
+        """
         messages = []
 
         message_batch = self._load_conversation_batch(conversation_id=conversation_id)
@@ -567,6 +835,9 @@ class Pinterest:
         return response['resource_response']['data']
 
     def get_conversations(self):
+        """
+        Loads a list of all conversations the current user has
+        """
         conversations = []
         conv_batch = self._get_conversation_batch()
         while len(conv_batch) > 0:
@@ -596,6 +867,9 @@ class Pinterest:
         return response['resource_response']['data']
 
     def create_board_section(self, board_id='', section_name=''):
+        """
+        Creates a new section in a board the current user owns
+        """
         options = {
             "board_id": board_id,
             "initial_pins": [],
@@ -607,6 +881,9 @@ class Pinterest:
         return self.post(url=BOARD_SECTION_RESOURCE, data=data)
 
     def get_board_sections(self, board_id=''):
+        """
+        Obtains a list of all sections of a board
+        """
         options = {
             "isPrefetch": False,
             "board_id": board_id,
@@ -618,6 +895,11 @@ class Pinterest:
         return response['resource_response']['data']
 
     def get_section_pins(self, section_id='', page_size=250):
+        """
+        Returns a list of all pins in a board section.
+        This method is batched meaning in order to obtain all pins in the section
+        you need to call is until empty list is returned
+        """
         options = {
             "isPrefetch": False,
             "field_set_key": "react_grid_pin",
@@ -638,6 +920,9 @@ class Pinterest:
         return pins
 
     def delete_board_section(self, section_id=''):
+        """
+        Deletes a board section by id
+        """
         options = {
             "section_id": section_id
         }
