@@ -1,7 +1,8 @@
 # py3-pinterest
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Unofficial Pinterest API implemented in python 3 that can do almost all pinterest tasks like comment, pin, repin, follow, unfollow and more.
+Unofficial Pinterest API implemented in python 3 that can do all Pinterest tasks like comment, pin, repin, follow, unfollow and more.
+
 It is implemented by directly calling the pinterest servers, mimicking an actual browser, so you don't need pinterest API key.
 
 If you see any issues, or find bugs feel free to report them here on the github repo.
@@ -18,15 +19,25 @@ If you see any issues, or find bugs feel free to report them here on the github 
 ```pinterest = Pinterest(email='your email goes here', password='password goes here', username='look in pinterest url', cred_root='cred root dir')```
 
 cred_root is the dir (automatically created if missing) that will store some cookies nad sessions, so you don't need to login before each request.
-Make sure you specify a path with read/write persmissions.
+Make sure you specify a path with read/write permissions.
 
+Proxies example:
+
+```
+proxies = {"http":"http://username:password@proxy_ip:proxy_port"}
+Pinterest(email='emai', password='pass', username='name', cred_root='cred_root', proxies=proxies)
+```
 
 # The following features are currently supported
 
+## Login/Logout
+Login will store auth cookies for later use. These cookies are usually valid for ~15 days, then you will start getting 403 and 401 errors, which means you need to call login again. 
 ## Login
 Login is required to permit actions to the Pinterest servers. Login will store auth cookies for later use. These cookies are usually valid for ~15 days, then you will start getting 403 and 401 errors, which means you need to call login again. 
 
 ```pinterest.login()```
+
+```pinterest.logout()```
 
 
 
@@ -100,7 +111,13 @@ A pinterest feature they use to pin from websites
 
 ### Pin
 
+Pin image by web url:
+
 ```pinterest.pin(board_id=board_id, image_url=image_url, description=description, title=title)```
+
+Pin image from local file:
+
+```pinterest.upload_pin(board_id=board_id, section_id=section_id, image_file=image_path, description=description, title=title, link=link)```
 
 ### Get home feed pins
 
@@ -110,11 +127,11 @@ A pinterest feature they use to pin from websites
 
 ```rec_batch = pinterest.board_recommendations(board_id=board_id)```
 
-### Get pin by id
+### Get pin information by id
 
 ```pinterest.load_pin(pin_id='pin_id')```
 
-### Section support
+### Board Section support
 ```pinterest.create_board_section(board_id=board_id, section_name=section_name)```
 ```pinterest.delete_board_section(section_id=section_id)```
 ```pinterest.get_board_sections(board_id=board_id)```
@@ -161,7 +178,7 @@ If username is not provided current user will be used
 
 ```search_batch = pinterest.search(scope='boards', query='food')```
 
-Current pinterest scopes are: pins, buyable_pins, my_pins, videos, users, boards
+Current pinterest scopes are: pins, buyable_pins, my_pins, videos, boards
 
 
 ## User interactions
