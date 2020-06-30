@@ -14,11 +14,12 @@ def print_all_section_pin_ids():
 
         print(target_board['name'])
         for section in sections:
-            section_pins = pinterest.get_section_pins(section_id=section['id'])
-
             print(section['slug'])
-            for sec_pin in section_pins:
-                print(sec_pin['id'])
+            section_pins = pinterest.get_section_pins(section_id=section['id'])
+            while section_pins:
+                for sec_pin in section_pins:
+                    print(sec_pin['id'])
+                section_pins = pinterest.get_section_pins(section_id=section['id'])
 
         print('\n')
 

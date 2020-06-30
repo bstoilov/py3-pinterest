@@ -900,17 +900,25 @@ class Pinterest:
         This method is batched meaning in order to obtain all pins in the section
         you need to call is until empty list is returned
         """
+        next_bookmark = self.bookmark_manager.get_bookmark(primary='section_pins', secondary=section_id)
+        if next_bookmark == '-end-':
+            return []
+
         options = {
             "isPrefetch": False,
             "field_set_key": "react_grid_pin",
             "is_own_profile_pins": True,
             "page_size": page_size,
             "redux_normalize_feed": True,
-            "section_id": section_id
+            "section_id": section_id,
+            "bookmarks": [next_bookmark]
         }
 
         url = self.req_builder.buildGet(url=GET_BOARD_SECTION_PINS, options=options)
         response = self.get(url=url).json()
+        bookmark = response['resource']['options']['bookmarks'][0]
+        self.bookmark_manager.add_bookmark(primary='section_pins', secondary=section_id)
+
         data = response['resource_response']['data']
         pins = []
 
