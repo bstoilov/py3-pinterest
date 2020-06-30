@@ -917,7 +917,7 @@ class Pinterest:
         url = self.req_builder.buildGet(url=GET_BOARD_SECTION_PINS, options=options)
         response = self.get(url=url).json()
         bookmark = response['resource']['options']['bookmarks'][0]
-        self.bookmark_manager.add_bookmark(primary='section_pins', secondary=section_id)
+        self.bookmark_manager.add_bookmark(primary='section_pins', secondary=section_id, bookmark=bookmark)
 
         data = response['resource_response']['data']
         pins = []
