@@ -411,8 +411,25 @@ class Pinterest:
         This method is simmilar to 'pin' except the image for the pin is local file.
         """
         image_url = self._upload_image(image_file=image_file).json()['image_url']
-        return self.pin(board_id=board_id, description=description, image_url=image_url, link=link, title=title,
-                        section_id=section_id)
+        #return self.pin(board_id=board_id, description=description, image_url=image_url, link=link, title=title,
+                        #section_id=section_id)
+        options = {
+            "board_id": board_id,
+            "field_set_key":"create_success",
+            "skip_pin_create_log":True,
+            "section": section_id,
+            "description": description,
+            "link": link if link else "",
+            "title": title,
+            "image_url": image_url,
+            "method": "uploaded",
+            "upload_metric":{"source":"pinner_upload_standalone"},
+            "user_mention_tags":[]
+        }
+        source_url = '/pin-builder/'
+        data = self.req_builder.buildPost(options=options, source_url=source_url)
+
+        return self.post(url=PIN_RESOURCE_CREATE, data=data)
 
     def repin(self, board_id, pin_id, section_id=None):
         """
@@ -900,25 +917,17 @@ class Pinterest:
         This method is batched meaning in order to obtain all pins in the section
         you need to call is until empty list is returned
         """
-        next_bookmark = self.bookmark_manager.get_bookmark(primary='section_pins', secondary=section_id)
-        if next_bookmark == '-end-':
-            return []
-
         options = {
             "isPrefetch": False,
             "field_set_key": "react_grid_pin",
             "is_own_profile_pins": True,
             "page_size": page_size,
             "redux_normalize_feed": True,
-            "section_id": section_id,
-            "bookmarks": [next_bookmark]
+            "section_id": section_id
         }
 
         url = self.req_builder.buildGet(url=GET_BOARD_SECTION_PINS, options=options)
         response = self.get(url=url).json()
-        bookmark = response['resource']['options']['bookmarks'][0]
-        self.bookmark_manager.add_bookmark(primary='section_pins', secondary=section_id, bookmark=bookmark)
-
         data = response['resource_response']['data']
         pins = []
 
