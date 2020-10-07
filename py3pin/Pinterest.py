@@ -860,7 +860,6 @@ class Pinterest:
 
         url = self.req_builder.buildGet(url=CONVERSATION_RESOURCE, options=options)
         response = self.get(url=url).json()
-
         next_bookmark = response['resource']['options']['bookmarks'][0]
         self.bookmark_manager.add_bookmark(primary='conversations', bookmark=next_bookmark)
 
@@ -880,19 +879,29 @@ class Pinterest:
         data = self.req_builder.buildPost(options=options)
         return self.post(url=BOARD_SECTION_RESOURCE, data=data)
 
+
     def get_board_sections(self, board_id=''):
         """
         Obtains a list of all sections of a board
         """
+        next_bookmark = self.bookmark_manager.get_bookmark(primary='board_sections', secondary=board_id)
+        if next_bookmark == '-end-':
+            return []
+
         options = {
             "isPrefetch": False,
             "board_id": board_id,
-            "redux_normalize_feed": True
+            "redux_normalize_feed": True,
+            "bookmarks": [next_bookmark]
         }
 
         url = self.req_builder.buildGet(url=GET_BOARD_SECTIONS, options=options)
         response = self.get(url=url).json()
+        bookmark = response['resource']['options']['bookmarks'][0]
+        self.bookmark_manager.add_bookmark(primary='board_sections', secondary=board_id, bookmark=bookmark)
+
         return response['resource_response']['data']
+
 
     def get_section_pins(self, section_id='', page_size=250):
         """
@@ -926,6 +935,7 @@ class Pinterest:
             if 'pinner' in d:
                 pins.append(d)
         return pins
+
 
     def delete_board_section(self, section_id=''):
         """
