@@ -880,12 +880,14 @@ class Pinterest:
         return self.post(url=BOARD_SECTION_RESOURCE, data=data)
 
 
-    def get_board_sections(self, board_id=''):
+    def get_board_sections(self, board_id='', reset_bookmark=False):
         """
         Obtains a list of all sections of a board
         """
         next_bookmark = self.bookmark_manager.get_bookmark(primary='board_sections', secondary=board_id)
         if next_bookmark == '-end-':
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(primary='board_sections', secondary=board_id)
             return []
 
         options = {
@@ -903,7 +905,7 @@ class Pinterest:
         return response['resource_response']['data']
 
 
-    def get_section_pins(self, section_id='', page_size=250):
+    def get_section_pins(self, section_id='', page_size=250, reset_bookmark=False):
         """
         Returns a list of all pins in a board section.
         This method is batched meaning in order to obtain all pins in the section
@@ -911,6 +913,8 @@ class Pinterest:
         """
         next_bookmark = self.bookmark_manager.get_bookmark(primary='section_pins', secondary=section_id)
         if next_bookmark == '-end-':
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(primary='section_pins', secondary=section_id)
             return []
 
         options = {
