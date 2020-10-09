@@ -20,3 +20,9 @@ class BookmarkManager:
             pass
 
         return None
+
+    def reset_bookmark(self, primary, secondary=None):
+        if primary in self.bookmark_map:
+            del self.bookmark_map[primary][secondary]
+        else:
+            pass
