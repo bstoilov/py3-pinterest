@@ -1,7 +1,10 @@
 from py3pin.Pinterest import Pinterest
 import requests
+import os
 
-download_dir = '.'
+download_dir = './pinterest_images/'
+if not os.path.exists(download_dir):
+    os.makedirs(download_dir)
 
 pinterest = Pinterest(email='email',
                       password='password',
@@ -18,7 +21,6 @@ target_board = boards[0]
 board_pins = []
 pin_batch = pinterest.board_feed(board_id=target_board['id'])
 
-
 while len(pin_batch) > 0:
     board_pins += pin_batch
     pin_batch = pinterest.board_feed(board_id=target_board['id'])
@@ -26,6 +28,7 @@ while len(pin_batch) > 0:
 
 # this can download images by url
 def download_image(url, path):
+    print("Downloading " + url)
     r = requests.get(url=url, stream=True)
     if r.status_code == 200:
         with open(path, 'wb') as f:

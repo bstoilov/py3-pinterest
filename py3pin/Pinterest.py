@@ -626,6 +626,7 @@ class Pinterest:
         """
         Gives access to pinterest search api
         This method is batched, meaning is needs to be called until empty list is returned.
+        NOTE: there is a max number of results set by Pinterest -> 1000
         :param scope: can be pins, buyable_pins, my_pins, videos, boards
         :param query: search phrase
         :param page_size: batch size
