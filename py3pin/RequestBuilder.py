@@ -27,7 +27,9 @@ class RequestBuilder:
             '_': '%s' % int(time.time() * 1000)
         })
 
-        return '{}/?{}'.format(url, data)
+        url = '{}/?{}'.format(url, data)
+        url = url.replace('/get//?', '/get/?')
+        return url
 
     def url_encode(self, query):
         if isinstance(query, str):
