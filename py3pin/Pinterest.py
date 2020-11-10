@@ -37,6 +37,7 @@ DELETE_PIN_RESOURCE = 'https://www.pinterest.com/resource/PinResource/delete/'
 PIN_COMMENT_RESOURCE = 'https://www.pinterest.com/resource/PinCommentResource/create/'
 BOARD_INVITE_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/BoardInviteResource/create/'
 BOARD_DELETE_INVITE_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/BoardCollaboratorResource/delete/'
+VISUAL_LIVE_SEARCH_RESOURCE = 'https://www.pinterest.com/resource/VisualLiveSearchResource/get'
 SEARCH_RESOURCE = 'https://www.pinterest.com/resource/SearchResource/get'
 BOARD_RECOMMEND_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/BoardContentRecommendationResource/get'
 PINNABLE_IMAGES_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/FindPinImagesResource/get'
@@ -621,6 +622,59 @@ class Pinterest:
         }
         data = self.req_builder.buildPost(options=options)
         return self.post(url=BOARD_DELETE_INVITE_RESOURCE, data=data)
+
+    def visual_search(self, pin_data, x = None, y = None, w = None, h = None, padding=10):
+      """
+      Gives access to pinterest search api
+      This method is batched, meaning is needs to be called until empty list is returned.
+      :param pin_data: pin data
+      :param x: x position of the cropped part of the image used for searching
+      :param y: y position of the cropped part of the image used for searching
+      :param w: width of the cropped part of the image used for searching
+      :param h: height of the cropped part of the image used for searching
+      :param padding: Default padding for for cropped image.
+
+      :return: python dict describing the pinterest response
+      """
+      
+      orig = pin_data['images']['orig']
+      width = orig['width']
+      height = orig['height']
+      image_signature = pin_data['image_signature']
+      pin_id = pin_data['id']
+
+      x = padding if x is None else x
+      y = padding if y is None else y
+      w = width - padding * 2  if w is None else w
+      h = height - padding * 2 if h is None else h
+
+      source_url = '/pin/{}/visual-search/?x={}&y={}&w={}&h={}'.format(pin_id, x, y, w, h)
+
+      next_bookmark = self.bookmark_manager.get_bookmark(primary='visual_search', secondary=source_url)
+      if next_bookmark == '-end-':
+        return []
+      
+      options = {
+          "isPrefetch": False,
+          "pin_id":pin_id,
+          "image_signature":image_signature,
+          "crop":{
+              "x": x / width,
+              "y": y / height,
+              "w": w / width,
+              "h": h / height
+          },
+          "bookmarks": [next_bookmark],
+          "no_fetch_context_on_resource": False
+      }
+      url = self.req_builder.buildGet(url=VISUAL_LIVE_SEARCH_RESOURCE, options=options, source_url=source_url)
+      resp = self.get(url=url).json()
+
+      bookmark = resp['resource']['options']['bookmarks'][0]
+
+      self.bookmark_manager.add_bookmark(primary='visual_search', secondary=source_url, bookmark=bookmark)
+      
+      return resp['resource_response']['data']['results']
 
     def search(self, scope, query, page_size=250):
         """
