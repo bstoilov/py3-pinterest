@@ -180,7 +180,12 @@ If username is not provided current user will be used
 
 Current pinterest scopes are: pins, buyable_pins, my_pins, videos, boards
 
+### Visual Search
 
+```
+  pin_data = pinterest.load_pin(pin_id='pin_id')
+  search_batch = pinterest.visual_search(pin_data, x=10, y=50, w=100, h=100)
+```
 ## User interactions
 ### Invite to board
 
