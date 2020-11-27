@@ -488,9 +488,12 @@ class Pinterest:
         scripts = soup.findAll('script')
         pin_data = {}
         for s in scripts:
-            if 'pins' in s.text and 'aggregated_pin_data' in s.text:
-                pin_data = json.loads(s.text)
-        return pin_data['pins'][str(pin_id)]
+            if 'id' in s.attrs and s.attrs['id'] == 'initial-state':
+                pinJsonData = json.loads(s.contents[0])['resources']['data']['PinResource']
+                pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]['data']
+                return pinJsonData
+
+        raise Exception("Pin data not found. Probably pintereset chagned their API")
 
     def get_comments(self, pin_id, page_size=50):
         """
