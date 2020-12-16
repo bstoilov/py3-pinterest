@@ -31,6 +31,7 @@ Pinterest(email='emai', password='pass', username='name', cred_root='cred_root',
 # The following features are currently supported
 
 ## Login/Logout
+## NOTE: Pinterest integrated google recaptcha. This means we have to use webdriver to login. For that reason you must have chrome installed on you computer, in order for the login to work.
 Login will store auth cookies for later use. These cookies are usually valid for ~15 days, then you will start getting 403 and 401 errors, which means you need to call login again. 
 ## Login
 Login is required to permit actions to the Pinterest servers. Login will store auth cookies for later use. These cookies are usually valid for ~15 days, then you will start getting 403 and 401 errors, which means you need to call login again. 
