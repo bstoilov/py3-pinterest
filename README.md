@@ -211,8 +211,12 @@ Current pinterest scopes are: pins, buyable_pins, my_pins, videos, boards
 ```pinterest.get_comments(pin_id='pin_id')```
 
 
-### Send perosnal message
+### Send personal message
 ```pinterest.send_message(conversation_id=conversation_id, pin_id="(pin_id)", message="hey")```
+
+
+### Access to type suggestions you see in the search input
+```pinterest.type_ahead(term='apple')```
 
 
 

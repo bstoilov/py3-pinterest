@@ -1,8 +1,8 @@
 from py3pin.Pinterest import Pinterest
 
 pinterest = Pinterest(email='email',
-                      password='password',
-                      username='username',
+                      password='pass',
+                      username='username from settings',
                       cred_root='cred_root')
 
 # proxies example:
@@ -200,12 +200,12 @@ def load_pin_by_id(pin_id=''):
 
 # Careful with category names. They have different names than as shown on Pinterest
 def create_board(name='',
-               description='',
-               category='other',
-               privacy='public',
-               layout='default'):
+                 description='',
+                 category='other',
+                 privacy='public',
+                 layout='default'):
     return pinterest.create_board(name=name, description=description, category=category,
-                                privacy=privacy, layout=layout)
+                                  privacy=privacy, layout=layout)
 
 
 def create_board_section(board_id='', section_name=''):
@@ -222,3 +222,7 @@ def get_board_sections(board_id=''):
 
 def get_board_section_feed(section_id=''):
     return pinterest.get_section_pins(section_id=section_id)
+
+
+def type_ahead(term="apple"):
+    return pinterest.type_ahead(term=term)

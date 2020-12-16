@@ -363,7 +363,7 @@ class Pinterest:
 
         next_bookmark = self.bookmark_manager.get_bookmark(primary='followers', secondary=username)
 
-        if next_bookmark is '-end-':
+        if next_bookmark == '-end-':
             return []
 
         options = {
@@ -1029,7 +1029,7 @@ class Pinterest:
         data = self.req_builder.buildPost(options=options)
         return self.post(url=BOARD_SECTION_EDIT_RESOURCE, data=data)
 
-    def type_ahead(self,scope="pins",count=5,term=""):
+    def type_ahead(self, scope="pins", count=5, term=""):
         """
         returns Pinterest predictions for given term.
         Response may include user profiles.
@@ -1039,10 +1039,10 @@ class Pinterest:
         :param term: word to be typed ahead
         :return: response items
         """
-        
-        source_url= "/"
-        options = {"pin_scope":scope,"count":count,"term":term,"no_fetch_context_on_resource":False}
-        url = self.req_builder.buildGet(TYPE_AHEAD_RESOURCE,options,source_url)
+
+        source_url = "/"
+        options = {"pin_scope": scope, "count": count, "term": term, "no_fetch_context_on_resource": False}
+        url = self.req_builder.buildGet(TYPE_AHEAD_RESOURCE, options, source_url)
 
         resp = self.get(url=url).json()
         return resp["resource_response"]["data"]["items"]
