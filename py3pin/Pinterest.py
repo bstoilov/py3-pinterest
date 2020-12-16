@@ -44,6 +44,7 @@ BOARD_INVITE_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/BoardInviteRes
 BOARD_DELETE_INVITE_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/BoardCollaboratorResource/delete/'
 VISUAL_LIVE_SEARCH_RESOURCE = 'https://www.pinterest.com/resource/VisualLiveSearchResource/get'
 SEARCH_RESOURCE = 'https://www.pinterest.com/resource/SearchResource/get'
+TYPE_AHEAD_RESOURCE = "https://www.pinterest.com/resource/AdvancedTypeaheadResource/get"
 BOARD_RECOMMEND_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/BoardContentRecommendationResource/get'
 PINNABLE_IMAGES_RESOURCE = 'https://www.pinterest.com/_ngjs/resource/FindPinImagesResource/get'
 BOARD_FEED_RESOURCE = 'https://www.pinterest.com/resource/BoardFeedResource/get'
@@ -1027,3 +1028,21 @@ class Pinterest:
         }
         data = self.req_builder.buildPost(options=options)
         return self.post(url=BOARD_SECTION_EDIT_RESOURCE, data=data)
+
+    def type_ahead(self,scope="pins",count=5,term=""):
+        """
+        returns Pinterest predictions for given term.
+        Response may include user profiles.
+        Example term "dada" gives ["dadaism","dada art"] etc.
+        :param scope:  always "pins"
+        :param count: max guess number
+        :param term: word to be typed ahead
+        :return: response items
+        """
+        
+        source_url= "/"
+        options = {"pin_scope":scope,"count":count,"term":term,"no_fetch_context_on_resource":False}
+        url = self.req_builder.buildGet(TYPE_AHEAD_RESOURCE,options,source_url)
+
+        resp = self.get(url=url).json()
+        return resp["resource_response"]["data"]["items"]
