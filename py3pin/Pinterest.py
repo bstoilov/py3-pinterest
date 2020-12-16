@@ -112,7 +112,7 @@ class Pinterest:
     def post(self, url, data=None, files=None, headers=None):
         return self.request('POST', url=url, data=data, files=files, extra_headers=headers)
 
-    def login(self, headless=True):
+    def login(self, headless=True, wait_time=15):
         """
         Logs user in with the provided credentials
         User session is stored in the 'cred_root' folder
@@ -129,7 +129,7 @@ class Pinterest:
         driver.get("https://pinterest.com/login")
 
         try:
-            WebDriverWait(driver, 3).until(EC.element_to_be_clickable((By.ID, 'email')))
+            WebDriverWait(driver, wait_time).until(EC.element_to_be_clickable((By.ID, 'email')))
 
             driver.find_element_by_id("email").send_keys(self.email)
             driver.find_element_by_id("password").send_keys(self.password)
@@ -139,7 +139,7 @@ class Pinterest:
             for login in logins:
                 login.click()
 
-            WebDriverWait(driver, 10).until(EC.invisibility_of_element((By.ID, 'email')))
+            WebDriverWait(driver, wait_time).until(EC.invisibility_of_element((By.ID, 'email')))
 
             cookies = driver.get_cookies()
 
