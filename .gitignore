@@ -7,3 +7,4 @@ py3_pinterest.egg-info/**
 test.py
 cred_root/**
 py3pin/cred_root/**
+venv/*

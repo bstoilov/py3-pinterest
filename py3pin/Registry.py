@@ -24,8 +24,8 @@ class Registry:
         except Exception as e:
             print("No credentials stored", e)
 
-    def get(self, cookieName):
-        return self.cookies[cookieName]
+    def get(self, cookie_name):
+        return self.cookies[cookie_name]
 
     def get_all(self):
         return self.cookies
@@ -42,7 +42,6 @@ class Registry:
         cred_file_path = self._get_cred_file_path()
         print("Reading credential from " + cred_file_path)
         f = open(cred_file_path, "w")
-        print("Writing " + json.dumps(self.cookies))
         f.write(json.dumps(self.cookies))
         f.close()
 

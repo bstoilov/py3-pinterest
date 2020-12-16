@@ -112,7 +112,7 @@ class Pinterest:
     def post(self, url, data=None, files=None, headers=None):
         return self.request('POST', url=url, data=data, files=files, extra_headers=headers)
 
-    def login(self):
+    def login(self, headless=True):
         """
         Logs user in with the provided credentials
         User session is stored in the 'cred_root' folder
@@ -122,7 +122,8 @@ class Pinterest:
         :return python dict object describing the pinterest response
         """
         chrome_options = Options()
-        chrome_options.add_argument("--headless")
+        if headless:
+            chrome_options.add_argument("--headless")
 
         driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
         driver.get("https://pinterest.com/login")
@@ -130,8 +131,8 @@ class Pinterest:
         try:
             WebDriverWait(driver, 3).until(EC.element_to_be_clickable((By.ID, 'email')))
 
-            driver.find_element_by_id("email").send_keys("boriostoilov@gmail.com")
-            driver.find_element_by_id("password").send_keys("Geni0us!")
+            driver.find_element_by_id("email").send_keys(self.email)
+            driver.find_element_by_id("password").send_keys(self.password)
 
             logins = driver.find_elements_by_xpath("//*[contains(text(), 'Log in')]")
 
