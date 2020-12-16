@@ -1,6 +1,5 @@
 import json
 import os
-
 import requests
 import mimetypes
 import requests.cookies
@@ -10,6 +9,12 @@ from py3pin.BookmarkManager import BookmarkManager
 from py3pin.Registry import Registry
 from py3pin.RequestBuilder import RequestBuilder
 from requests.structures import CaseInsensitiveDict
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 
 AGENT_STRING = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) " \
                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
@@ -72,15 +77,11 @@ class Pinterest:
         self.proxies = proxies
         self.user_agent = user_agent
 
-        data_path = os.path.join(cred_root, self.email) + os.sep
-        if not os.path.isdir(data_path):
-            os.makedirs(data_path)
+        self.registry = Registry(cred_root, email)
 
-        self.registry = Registry('{}registry.dat'.format(data_path))
-
-        cookies = self.registry.get(Registry.Key.COOKIES)
-        if cookies is not None:
-            self.http.cookies.update(cookies)
+        cookies = self.registry.get_all()
+        for key in cookies.keys():
+            self.http.cookies.set(key, cookies[key])
 
         if self.user_agent is None:
             self.user_agent = AGENT_STRING
@@ -102,7 +103,7 @@ class Pinterest:
 
         response = self.http.request(method, url, data=data, headers=headers, files=files, proxies=self.proxies)
         response.raise_for_status()
-        self.registry.update(Registry.Key.COOKIES, response.cookies)
+
         return response
 
     def get(self, url):
@@ -111,7 +112,7 @@ class Pinterest:
     def post(self, url, data=None, files=None, headers=None):
         return self.request('POST', url=url, data=data, files=files, extra_headers=headers)
 
-    def login(self):
+    def login(self, headless=True, wait_time=15):
         """
         Logs user in with the provided credentials
         User session is stored in the 'cred_root' folder
@@ -120,16 +121,37 @@ class Pinterest:
         Ideally you need to call this method 3-4 times a month at most.
         :return python dict object describing the pinterest response
         """
-        self.get(HOME_PAGE)
-        self.get(LOGIN_PAGE)
+        chrome_options = Options()
+        if headless:
+            chrome_options.add_argument("--headless")
 
-        options = {
-            'username_or_email': self.email,
-            'password': self.password
-        }
+        driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+        driver.get("https://pinterest.com/login")
 
-        data = self.req_builder.buildPost(options=options, source_url='/login/?referrer=home_page')
-        return self.post(url=CREATE_USER_SESSION, data=data)
+        try:
+            WebDriverWait(driver, wait_time).until(EC.element_to_be_clickable((By.ID, 'email')))
+
+            driver.find_element_by_id("email").send_keys(self.email)
+            driver.find_element_by_id("password").send_keys(self.password)
+
+            logins = driver.find_elements_by_xpath("//*[contains(text(), 'Log in')]")
+
+            for login in logins:
+                login.click()
+
+            WebDriverWait(driver, wait_time).until(EC.invisibility_of_element((By.ID, 'email')))
+
+            cookies = driver.get_cookies()
+
+            self.http.cookies.clear()
+            for cookie in cookies:
+                self.http.cookies.set(cookie['name'], cookie['value'])
+
+            self.registry.update_all(self.http.cookies.get_dict())
+        except Exception as e:
+            print("Failed to login", e)
+
+        driver.close()
 
     def logout(self):
         """
@@ -626,58 +648,58 @@ class Pinterest:
         data = self.req_builder.buildPost(options=options)
         return self.post(url=BOARD_DELETE_INVITE_RESOURCE, data=data)
 
-    def visual_search(self, pin_data, x = None, y = None, w = None, h = None, padding=10):
-      """
-      Gives access to pinterest search api
-      This method is batched, meaning is needs to be called until empty list is returned.
-      :param pin_data: pin data
-      :param x: x position of the cropped part of the image used for searching
-      :param y: y position of the cropped part of the image used for searching
-      :param w: width of the cropped part of the image used for searching
-      :param h: height of the cropped part of the image used for searching
-      :param padding: Default padding for for cropped image.
+    def visual_search(self, pin_data, x=None, y=None, w=None, h=None, padding=10):
+        """
+        Gives access to pinterest search api
+        This method is batched, meaning is needs to be called until empty list is returned.
+        :param pin_data: pin data
+        :param x: x position of the cropped part of the image used for searching
+        :param y: y position of the cropped part of the image used for searching
+        :param w: width of the cropped part of the image used for searching
+        :param h: height of the cropped part of the image used for searching
+        :param padding: Default padding for for cropped image.
 
-      :return: python dict describing the pinterest response
-      """
-      
-      orig = pin_data['images']['orig']
-      width = orig['width']
-      height = orig['height']
-      image_signature = pin_data['image_signature']
-      pin_id = pin_data['id']
+        :return: python dict describing the pinterest response
+        """
 
-      x = padding if x is None else x
-      y = padding if y is None else y
-      w = width - padding * 2  if w is None else w
-      h = height - padding * 2 if h is None else h
+        orig = pin_data['images']['orig']
+        width = orig['width']
+        height = orig['height']
+        image_signature = pin_data['image_signature']
+        pin_id = pin_data['id']
 
-      source_url = '/pin/{}/visual-search/?x={}&y={}&w={}&h={}'.format(pin_id, x, y, w, h)
+        x = padding if x is None else x
+        y = padding if y is None else y
+        w = width - padding * 2 if w is None else w
+        h = height - padding * 2 if h is None else h
 
-      next_bookmark = self.bookmark_manager.get_bookmark(primary='visual_search', secondary=source_url)
-      if next_bookmark == '-end-':
-        return []
-      
-      options = {
-          "isPrefetch": False,
-          "pin_id":pin_id,
-          "image_signature":image_signature,
-          "crop":{
-              "x": x / width,
-              "y": y / height,
-              "w": w / width,
-              "h": h / height
-          },
-          "bookmarks": [next_bookmark],
-          "no_fetch_context_on_resource": False
-      }
-      url = self.req_builder.buildGet(url=VISUAL_LIVE_SEARCH_RESOURCE, options=options, source_url=source_url)
-      resp = self.get(url=url).json()
+        source_url = '/pin/{}/visual-search/?x={}&y={}&w={}&h={}'.format(pin_id, x, y, w, h)
 
-      bookmark = resp['resource']['options']['bookmarks'][0]
+        next_bookmark = self.bookmark_manager.get_bookmark(primary='visual_search', secondary=source_url)
+        if next_bookmark == '-end-':
+            return []
 
-      self.bookmark_manager.add_bookmark(primary='visual_search', secondary=source_url, bookmark=bookmark)
-      
-      return resp['resource_response']['data']['results']
+        options = {
+            "isPrefetch": False,
+            "pin_id": pin_id,
+            "image_signature": image_signature,
+            "crop": {
+                "x": x / width,
+                "y": y / height,
+                "w": w / width,
+                "h": h / height
+            },
+            "bookmarks": [next_bookmark],
+            "no_fetch_context_on_resource": False
+        }
+        url = self.req_builder.buildGet(url=VISUAL_LIVE_SEARCH_RESOURCE, options=options, source_url=source_url)
+        resp = self.get(url=url).json()
+
+        bookmark = resp['resource']['options']['bookmarks'][0]
+
+        self.bookmark_manager.add_bookmark(primary='visual_search', secondary=source_url, bookmark=bookmark)
+
+        return resp['resource_response']['data']['results']
 
     def search(self, scope, query, page_size=250):
         """
@@ -937,7 +959,6 @@ class Pinterest:
         data = self.req_builder.buildPost(options=options)
         return self.post(url=BOARD_SECTION_RESOURCE, data=data)
 
-
     def get_board_sections(self, board_id='', reset_bookmark=False):
         """
         Obtains a list of all sections of a board
@@ -961,7 +982,6 @@ class Pinterest:
         self.bookmark_manager.add_bookmark(primary='board_sections', secondary=board_id, bookmark=bookmark)
 
         return response['resource_response']['data']
-
 
     def get_section_pins(self, section_id='', page_size=250, reset_bookmark=False):
         """
@@ -997,7 +1017,6 @@ class Pinterest:
             if 'pinner' in d:
                 pins.append(d)
         return pins
-
 
     def delete_board_section(self, section_id=''):
         """

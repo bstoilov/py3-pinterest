@@ -1,58 +1,49 @@
-# -*- coding: utf-8 -*-
+import json
 import os
-import pickle
+import shutil
 
 
 class Registry:
-    __committed = True
-    __path = None
-    __data = dict()
+    path = None
+    cookies = dict()
 
-    def __init__(self, path):
-        self.__path = path
-        if os.path.isfile(path):
-            with open(path, 'rb') as f:
-                self.__data = dict(pickle.load(f))
+    def __init__(self, root, username):
+        self.root = root
+        self.username = username
 
-    def get(self, key, default=None):
-        if key in self.__data:
-            return self.__data[key]
-        return default
+        if os.path.isdir(self._get_cred_file_path()):
+            shutil.rmtree(self._get_cred_file_path())
 
-    def set(self, key, value, commit=True):
-        if key:
-            self.__data[key] = value
-            self.__committed = False
-            if commit:
-                self.commit()
-            return True
-        return False
+        if not os.path.exists(root):
+            os.mkdir(root)
 
-    def update(self, key, value, commit=True):
-        if hasattr(self.get(key), 'update'):
-            self.get(key).update(value)
-            self.__committed = False
-            if commit:
-                self.commit()
-            return True
-        return self.set(key, value, commit)
+        try:
+            with open(self._get_cred_file_path()) as f:
+                content = f.read()
+                self.cookies = json.loads(content)
+        except Exception as e:
+            print("No credentials stored", e)
 
-    def commit(self):
-        if not self.__committed:
-            with open(self.__path, 'wb') as f:
-                pickle.dump(self.__data, f, 1)
-            self.__committed = True
-        return self.__committed
+    def get(self, cookie_name):
+        return self.cookies[cookie_name]
 
-    def hasKey(self, key):
-        return key in self.__data
+    def get_all(self):
+        return self.cookies
 
-    def keys(self):
-        return self.__data.keys()
+    def update_all(self, cookie_dict):
+        self.cookies = cookie_dict
+        self._persist()
 
-    class Key:
-        CSRF_TOKEN = 'token'
-        COOKIES = 'cookies'
+    def set(self, key, value):
+        self.cookies[key] = value
+        self._persist()
 
-        def __init__(self):
-            pass
+    def _persist(self):
+        cred_file_path = self._get_cred_file_path()
+        print("Reading credential from " + cred_file_path)
+        f = open(cred_file_path, "w")
+        f.write(json.dumps(self.cookies))
+        f.close()
+
+    def _get_cred_file_path(self):
+        return os.path.join(self.root, self.username)
