@@ -15,6 +15,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.proxy import Proxy, ProxyType
 
 AGENT_STRING = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) " \
                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
@@ -113,7 +114,7 @@ class Pinterest:
     def post(self, url, data=None, files=None, headers=None):
         return self.request('POST', url=url, data=data, files=files, extra_headers=headers)
 
-    def login(self, headless=True, wait_time=15):
+    def login(self, headless=True, wait_time=15, proxy=None):
         """
         Logs user in with the provided credentials
         User session is stored in the 'cred_root' folder
@@ -125,6 +126,14 @@ class Pinterest:
         chrome_options = Options()
         if headless:
             chrome_options.add_argument("--headless")
+
+        if proxy is not None:
+            http_proxy = Proxy()
+            http_proxy.proxy_type = ProxyType.MANUAL
+            http_proxy.http_proxy = proxy
+            http_proxy.socks_proxy = proxy
+            http_proxy.ssl_proxy = proxy
+            http_proxy.add_to_capabilities(chrome_options)
 
         driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
         driver.get("https://pinterest.com/login")
