@@ -5,6 +5,8 @@ pinterest = Pinterest(email='email',
                       username='username from settings',
                       cred_root='cred_root')
 
+# to release
+# python3 setup.py sdist & twine upload --skip-existing dist/*
 # proxies example:
 # proxies = {"http":"http://username:password@proxy_ip:proxy_port"}
 # Pinterest(email='emai', password='pass', username='name', cred_root='cred_root', proxies=proxies)
