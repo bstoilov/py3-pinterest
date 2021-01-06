@@ -28,7 +28,6 @@ class RequestBuilder:
         })
 
         url = '{}?{}'.format(url, data)
-        url = url.replace('/get//?', '/get/?')
         return url
 
     def url_encode(self, query):
