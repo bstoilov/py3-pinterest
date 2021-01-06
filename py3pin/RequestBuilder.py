@@ -27,7 +27,7 @@ class RequestBuilder:
             '_': '%s' % int(time.time() * 1000)
         })
 
-        url = '{}/?{}'.format(url, data)
+        url = '{}?{}'.format(url, data)
         url = url.replace('/get//?', '/get/?')
         return url
 
