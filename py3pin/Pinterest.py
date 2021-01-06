@@ -1020,12 +1020,7 @@ class Pinterest:
         bookmark = response['resource']['options']['bookmarks'][0]
         self.bookmark_manager.add_bookmark(primary='section_pins', secondary=section_id, bookmark=bookmark)
 
-        data = response['resource_response']['data']
-        pins = []
-
-        for d in data:
-            if 'pinner' in d:
-                pins.append(d)
+        pins = [d for d in response['resource_response']['data'] if 'pinner' in d]
         return pins
 
     def delete_board_section(self, section_id=''):
