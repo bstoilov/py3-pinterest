@@ -1,8 +1,8 @@
 from py3pin.Pinterest import Pinterest
 
 pinterest = Pinterest(email='email',
-                      password='pass',
-                      username='username from settings',
+                      password='password',
+                      username='username',
                       cred_root='cred_root')
 
 # to release

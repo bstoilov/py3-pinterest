@@ -15,7 +15,7 @@ class Registry:
             shutil.rmtree(self._get_cred_file_path())
 
         if not os.path.exists(root):
-            os.mkdir(root)
+            os.makedirs(root)
 
         try:
             with open(self._get_cred_file_path()) as f:

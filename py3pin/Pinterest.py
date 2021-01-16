@@ -161,6 +161,7 @@ class Pinterest:
         except Exception as e:
             print("Failed to login", e)
 
+        print("Successfully logged in with account " + self.email)
         driver.close()
 
     def logout(self):
