@@ -18,22 +18,22 @@ pinterest = Pinterest(email='your_email',
 # your boards, pick one
 boards = pinterest.boards()
 
-#delme
+# delme
 for board in boards:
     target_board = board
     print(target_board['name'])
     if not os.path.exists(download_dir + target_board['name']):
         os.makedirs(download_dir + target_board['name'])
-    
 
-# get all pins for the board
+    # get all pins for the board
     board_pins = []
     pin_batch = pinterest.board_feed(board_id=target_board['id'])
 
     while len(pin_batch) > 0:
         board_pins += pin_batch
         pin_batch = pinterest.board_feed(board_id=target_board['id'])
-    
+
+
     # this can download images by url
     def download_image(url, path):
         global countrSkip
@@ -52,19 +52,19 @@ for board in boards:
                     if nb_tries == 0:
                         raise err
                     else:
-                        time.sleep(1)  
+                        time.sleep(1)
             if r.status_code == 200:
                 countrDnld += 1
                 print("Downloading " + url)
                 with open(path, 'wb') as f:
                     for chunk in r.iter_content(1024):
                         f.write(chunk)
-        
-    
-# download each pin image in the specified directory
+
+
+    # download each pin image in the specified directory
     for pin in board_pins:
         if 'images' in pin:
             url = pin['images']['orig']['url']
             download_image(url, download_dir + target_board['name'] + '/' + url.rsplit('/', 1)[-1])
-print ("Existing files:" + str(countrSkip))
-print ("New files:" + str(countrDnld))
+print("Existing files:" + str(countrSkip))
+print("New files:" + str(countrDnld))
