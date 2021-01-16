@@ -126,6 +126,7 @@ class Pinterest:
         chrome_options = Options()
         if headless:
             chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--lang=en")
 
         if proxy is not None:
             http_proxy = Proxy()
