@@ -195,7 +195,7 @@ class Pinterest:
 
     def boards(self, username=None, page_size=50):
         """
-        The data returned is chunked, this comes from pinterest'a rest api.
+        The data returned is chunked, this comes from pinterest's rest api.
         Some users might have huge number of boards that is why it make sense to chunk the data.
         In order to obtain all boards this method needs to be called until it returns empty list
         :param username: target username, if left blank current user is assumed
@@ -230,7 +230,7 @@ class Pinterest:
     def boards_all(self, username=None):
         """
         Obtains all boards of a user.
-        NOTE: some users might have hube amounts of boards.
+        NOTE: some users might have huge number of boards.
         In such cases 'boards' method (which is batched) should be used in order to avoid memory issues
         :param username: target user, if left blank current user is assumed
         :return all boards of a user
@@ -250,7 +250,7 @@ class Pinterest:
         :param description: board description
         :param category: if you have defined categories (it is not visible to external users)
         :param privace: can be public or private
-        :param layout: looks like a legacy parameter but is it mandatory (can be left as
+        :param layout: looks like a legacy parameter but it is mandatory (can be left as default)
         """
         options = {
             "name": name,
@@ -417,7 +417,7 @@ class Pinterest:
     def pin(self, board_id, image_url, description='', link='', title='', section_id=None):
         """
         Perfoms a pin operation. If you want to upload local image use 'upload_pin'
-        :param board_id: id of the target board (current user should have rights to pin to is)
+        :param board_id: id of the target board (current user should have rights to pin to it)
         :param image_url: web url of an image (not local one)
         :param description: pin description (can be blank)
         :param link: link to include (can be blank)
@@ -484,7 +484,7 @@ class Pinterest:
 
     def delete_pin(self, pin_id):
         """
-        Deletes a pint the user owne
+        Deletes a pint the user owns
         :param pin_id: pin id to delete
         :return: python dict describing the pinterest response
         """
@@ -594,7 +594,7 @@ class Pinterest:
 
     def invite(self, board_id, user_id):
         """
-        Invite a user to one of the current users boards
+        Invite a user to one of the current user's boards
         :param board_id: board to invite to
         :param user_id: user to invite
         :return: python dict describing the pinterest response
@@ -668,7 +668,7 @@ class Pinterest:
         :param y: y position of the cropped part of the image used for searching
         :param w: width of the cropped part of the image used for searching
         :param h: height of the cropped part of the image used for searching
-        :param padding: Default padding for for cropped image.
+        :param padding: Default padding for cropped image.
 
         :return: python dict describing the pinterest response
         """
