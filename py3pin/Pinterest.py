@@ -114,7 +114,7 @@ class Pinterest:
     def post(self, url, data=None, files=None, headers=None):
         return self.request('POST', url=url, data=data, files=files, extra_headers=headers)
 
-    def login(self, headless=True, wait_time=15, proxy=None):
+    def login(self, headless=True, wait_time=15, proxy=None, lang="en"):
         """
         Logs user in with the provided credentials
         User session is stored in the 'cred_root' folder
@@ -124,6 +124,7 @@ class Pinterest:
         :return python dict object describing the pinterest response
         """
         chrome_options = Options()
+        chrome_options.add_argument("--lang=%s" % lang)
         if headless:
             chrome_options.add_argument("--headless")
 
