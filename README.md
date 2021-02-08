@@ -10,6 +10,7 @@ If you see any issues, or find bugs feel free to report them here on the github 
 ## Community guides
 [Get started with pinterest automation](https://martechwithme.com/how-to-automate-pinterest-interactions-python "Martechwithme.com")
 
+[Automated posting to Pinterest (in Russian)](https://www.youtube.com/watch?v=TQBceIiv_Gk&ab_channel=Analitiq "Analitiq YouTube")
 
 
 ## Install using pip
