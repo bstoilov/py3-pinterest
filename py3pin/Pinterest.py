@@ -640,9 +640,12 @@ class Pinterest:
         pin_data = {}
         for s in scripts:
             if "id" in s.attrs and s.attrs["id"] == "initial-state":
-                pinJsonData = json.loads(s.contents[0])["resources"]["data"][
-                    "PinResource"
-                ]
+                pinJsonData = json.loads(s.contents[0])["resources"]
+                
+                if 'data' in pinJsonData:
+                    pinJsonData = pinJsonData['data']
+                
+                pinJsonData = pinJsonData["PinResource"]
                 pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]["data"]
                 return pinJsonData
 
