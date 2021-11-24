@@ -113,13 +113,13 @@ BOARD_FOLLOWERS = "https://pinterest.com/resource/BoardFollowersResource/get/"
 
 class Pinterest:
     def __init__(
-        self,
-        password="",
-        proxies=None,
-        username="",
-        email="",
-        cred_root="data",
-        user_agent=None,
+            self,
+            password="",
+            proxies=None,
+            username="",
+            email="",
+            cred_root="data",
+            user_agent=None,
     ):
         self.email = email
         self.username = username
@@ -228,6 +228,21 @@ class Pinterest:
 
         print("Successfully logged in with account " + self.email)
         driver.close()
+
+    def check_login_status(self):
+        """
+        checks login status
+        :return:boolean describing the pinterest response
+        """
+        resp = self.get(url=HOME_PAGE)
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        scripts = soup.findAll('script')
+        for s in scripts:
+            if 'id' in s.attrs and s.attrs['id'] == '__PWS_DATA__':
+                pinJsonData = json.loads(s.contents[0])['isAuthenticated']
+                return pinJsonData
+
+        raise Exception(" data not found. Probably pintereset chagned their API")
 
     def logout(self):
         """
@@ -347,7 +362,7 @@ class Pinterest:
         """
         if username is None:
             username = self.username
-            own_profile = True 
+            own_profile = True
         else:
             own_profile = False
 
@@ -362,7 +377,7 @@ class Pinterest:
             "username": username,
             "is_own_profile_pins": own_profile,
             "field_set_key": "grid_item",
-            "pin_filter": None,  
+            "pin_filter": None,
             "bookmarks": [next_bookmark],
             "page_size": page_size,
         }
@@ -377,7 +392,7 @@ class Pinterest:
         return response["resource_response"]["data"]
 
     def create_board(
-        self, name, description="", category="other", privacy="public", layout="default"
+            self, name, description="", category="other", privacy="public", layout="default"
     ):
         """
         Creates a new board and returns the response from pinterest.
@@ -562,7 +577,7 @@ class Pinterest:
         return followers
 
     def pin(
-        self, board_id, image_url, description="", link="", title="", section_id=None
+            self, board_id, image_url, description="", link="", title="", section_id=None
     ):
         """
         Perfoms a pin operation. If you want to upload local image use 'upload_pin'
@@ -590,7 +605,7 @@ class Pinterest:
         return self.post(url=PIN_RESOURCE_CREATE, data=data)
 
     def upload_pin(
-        self, board_id, image_file, description="", link="", title="", section_id=None
+            self, board_id, image_file, description="", link="", title="", section_id=None
     ):
         """
         This method is simmilar to 'pin' except the image for the pin is local file.
@@ -681,16 +696,13 @@ class Pinterest:
         for s in scripts:
             if 'id' in s.attrs and s.attrs['id'] == '__PWS_DATA__':
                 pinJsonData = json.loads(s.contents[0])['props']['initialReduxState']['resources']['PinResource']
-                if 'data' in pinJsonData:
-                    pinJsonData
                 pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]['data']
-
 
                 return pinJsonData
 
         raise Exception("Pin data not found. Probably pintereset chagned their API")
 
-    def get_comments(self, pin_id,pin_data=None ,page_size=50):
+    def get_comments(self, pin_id, pin_data=None, page_size=50):
         """
         Get comments on a pin.
         The response is batched, meaning this method should be called util empty list is returned
@@ -699,7 +711,7 @@ class Pinterest:
         :return: list of comment objects
         """
         if pin_data:
-            pin_data=pin_data
+            pin_data = pin_data
         else:
             pin_data = self.load_pin(pin_id=pin_id)
 
