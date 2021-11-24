@@ -232,7 +232,7 @@ class Pinterest:
     def check_login_status(self):
         """
         checks login status
-        :return:boolean describing the pinterest response
+        :return: boolean describing the pinterest response
         """
         resp = self.get(url=HOME_PAGE)
         soup = BeautifulSoup(resp.text, 'html.parser')
