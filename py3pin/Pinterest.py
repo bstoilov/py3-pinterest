@@ -74,6 +74,7 @@ BOARD_FEED_RESOURCE = "https://www.pinterest.com/resource/BoardFeedResource/get/
 USER_HOME_FEED_RESOURCE = (
     "https://www.pinterest.com/_ngjs/resource/UserHomefeedResource/get/"
 )
+USER_PIN_RESOURCE = "https://www.pinterest.com/resource/UserPinsResource/get/"
 BASE_SEARCH_RESOURCE = "https://www.pinterest.com/resource/BaseSearchResource/get/"
 BOARD_INVITES_RESOURCE = (
     "https://www.pinterest.com/_ngjs/resource/BoardInvitesResource/get/"
@@ -335,6 +336,45 @@ class Pinterest:
             board_batch = self.boards(username=username)
 
         return boards
+
+    def get_user_pins(self, username=None, page_size=250):
+        """
+        Obtains all the pins of a user.
+        This method is batched, meaning in order to obtain all pins you need
+        to call it until empty list is returned.
+        :return all pins under all pins board
+        :param username: target user, if left blank current user is assumed
+        """
+        if username is None:
+            username = self.username
+            own_profile = True 
+        else:
+            own_profile = False
+
+        next_bookmark = self.bookmark_manager.get_bookmark(
+            primary="pins", secondary=username
+        )
+
+        if next_bookmark == "-end-":
+            return []
+
+        options = {
+            "username": username,
+            "is_own_profile_pins": own_profile,
+            "field_set_key": "grid_item",
+            "pin_filter": None,  
+            "bookmarks": [next_bookmark],
+            "page_size": page_size,
+        }
+        url = self.req_builder.buildGet(url=USER_PIN_RESOURCE, options=options)
+
+        response = self.get(url=url).json()
+        bookmark = response["resource"]["options"]["bookmarks"][0]
+        self.bookmark_manager.add_bookmark(
+            primary="board_feed", secondary=username, bookmark=bookmark
+        )
+
+        return response["resource_response"]["data"]
 
     def create_board(
         self, name, description="", category="other", privacy="public", layout="default"
