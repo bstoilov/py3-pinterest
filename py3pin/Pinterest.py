@@ -641,12 +641,16 @@ class Pinterest:
         for s in scripts:
             if 'id' in s.attrs and s.attrs['id'] == '__PWS_DATA__':
                 pinJsonData = json.loads(s.contents[0])['props']['initialReduxState']['resources']['PinResource']
+                if 'data' in pinJsonData:
+                    pinJsonData
                 pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]['data']
+
+
                 return pinJsonData
 
         raise Exception("Pin data not found. Probably pintereset chagned their API")
 
-    def get_comments(self, pin_id, page_size=50):
+    def get_comments(self, pin_id,pin_data=None ,page_size=50):
         """
         Get comments on a pin.
         The response is batched, meaning this method should be called util empty list is returned
@@ -654,7 +658,10 @@ class Pinterest:
         :param page_size:  batch size
         :return: list of comment objects
         """
-        pin_data = self.load_pin(pin_id=pin_id)
+        if pin_data:
+            pin_data=pin_data
+        else:
+            pin_data = self.load_pin(pin_id=pin_id)
 
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="pin_comments", secondary=pin_id
