@@ -695,8 +695,10 @@ class Pinterest:
         pin_data = {}
         for s in scripts:
             if 'id' in s.attrs and s.attrs['id'] == '__PWS_DATA__':
+                is_authenticated = json.loads(s.contents[0])['isAuthenticated']
                 pinJsonData = json.loads(s.contents[0])['props']['initialReduxState']['resources']['PinResource']
                 pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]['data']
+                pinJsonData.update({'is_authenticated': is_authenticated})
 
                 return pinJsonData
 
