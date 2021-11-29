@@ -695,9 +695,16 @@ class Pinterest:
         pin_data = {}
         for s in scripts:
             if 'id' in s.attrs and s.attrs['id'] == '__PWS_DATA__':
+
                 is_authenticated = json.loads(s.contents[0])['isAuthenticated']
                 pinJsonData = json.loads(s.contents[0])['props']['initialReduxState']['resources']['PinResource']
+                if is_authenticated == None or pinJsonData == None:
+                    print('broken link')
+                    return None
                 pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]['data']
+                if pinJsonData == None:
+                    print('broken link')
+                    return None
                 pinJsonData.update({'is_authenticated': is_authenticated})
 
                 return pinJsonData
@@ -716,6 +723,8 @@ class Pinterest:
             pin_data = pin_data
         else:
             pin_data = self.load_pin(pin_id=pin_id)
+
+        is_authenticated = pin_data.get('is_authenticated')
 
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="pin_comments", secondary=pin_id
@@ -745,8 +754,9 @@ class Pinterest:
         self.bookmark_manager.add_bookmark(
             primary="pin_comments", secondary=pin_id, bookmark=bookmark
         )
+        resp = json.loads(resp["data"])
 
-        return resp["data"]
+        return resp
 
     def get_comments_all(self, pin_id):
         """
