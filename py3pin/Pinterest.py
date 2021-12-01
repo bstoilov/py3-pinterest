@@ -698,11 +698,11 @@ class Pinterest:
 
                 is_authenticated = json.loads(s.contents[0])['isAuthenticated']
                 pinJsonData = json.loads(s.contents[0])['props']['initialReduxState']['resources']['PinResource']
-                if is_authenticated == None or pinJsonData == None:
+                if not is_authenticated or not pinJsonData:
                     print('broken link')
                     return None
                 pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]['data']
-                if pinJsonData == None:
+                if not pinJsonData :
                     print('broken link')
                     return None
                 pinJsonData.update({'is_authenticated': is_authenticated})
@@ -754,9 +754,9 @@ class Pinterest:
         self.bookmark_manager.add_bookmark(
             primary="pin_comments", secondary=pin_id, bookmark=bookmark
         )
-        resp = json.loads(resp["data"])
+        # resp = json.loads(resp["data"])
 
-        return resp
+        return resp['data']
 
     def get_comments_all(self, pin_id):
         """
