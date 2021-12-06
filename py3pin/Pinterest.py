@@ -10,8 +10,8 @@ from py3pin.Registry import Registry
 from py3pin.RequestBuilder import RequestBuilder
 from requests.structures import CaseInsensitiveDict
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.firefox.options import Options
+from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -194,8 +194,8 @@ class Pinterest:
             http_proxy.ssl_proxy = proxy
             http_proxy.add_to_capabilities(chrome_options)
 
-        driver = webdriver.Chrome(
-            ChromeDriverManager().install(), options=chrome_options
+        driver = webdriver.Firefox(
+            executable_path=GeckoDriverManager().install(), options=chrome_options
         )
         driver.get("https://pinterest.com/login")
 
@@ -702,7 +702,7 @@ class Pinterest:
                     print('broken link')
                     return None
                 pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]['data']
-                if not pinJsonData :
+                if not pinJsonData:
                     print('broken link')
                     return None
                 pinJsonData.update({'is_authenticated': is_authenticated})
