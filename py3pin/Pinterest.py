@@ -16,6 +16,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.proxy import Proxy, ProxyType
+from time import sleep
 
 AGENT_STRING = (
     "Mozilla/5.0 (Windows NT 6.1; Win64; x64) "
@@ -198,6 +199,7 @@ class Pinterest:
             executable_path=GeckoDriverManager().install(), options=chrome_options
         )
         driver.get("https://pinterest.com/login")
+        sleep(10)
 
         try:
             WebDriverWait(driver, wait_time).until(
