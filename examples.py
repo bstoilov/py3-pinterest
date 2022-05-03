@@ -14,7 +14,7 @@ pinterest = Pinterest(email='email',
 
 # login will obtain and store cookies for further use, they last around 15 days.
 # NOTE: Since login will store the cookies in local file you don't need to call it more then 3-4 times a month.
-# pinterest.login(headless=True)
+# pinterest.login()
 
 def get_user_profile():
     return pinterest.get_user_overview(username='username')
