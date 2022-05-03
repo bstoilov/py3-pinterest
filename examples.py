@@ -127,9 +127,10 @@ def pin(board_id='',
         image_url='https://i.pinimg.com/170x/32/78/bd/3278bd27073e1ec9c8a708409279768b.jpg',
         description='this is auto pin',
         title='a bot did this',
+        alt_text='alt text',
         link='https://www.google.com/'):
-    return pinterest.pin(board_id=board_id, section_id=section_id, image_url=image_url, description=description,
-                         title=title, link=link)
+    return pinterest.pin(board_id=board_id, section_id=section_id, image_url=image_url,
+                         alt_text=alt_text, description=description, title=title, link=link)
 
 
 def upload_pin(board_id='',
@@ -228,3 +229,6 @@ def get_board_section_feed(section_id=''):
 
 def type_ahead(term="apple"):
     return pinterest.type_ahead(term=term)
+
+def add_pin_note(pin_id, note='test note'):
+    pinterest.add_pin_note(pin_id=pin_id, note=note)

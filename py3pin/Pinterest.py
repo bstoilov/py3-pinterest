@@ -109,6 +109,7 @@ GET_BOARD_SECTION_PINS = (
 )
 UPLOAD_IMAGE = "https://www.pinterest.com/upload-image/"
 BOARD_FOLLOWERS = "https://pinterest.com/resource/BoardFollowersResource/get/"
+ADD_PIN_NOTE = "https://www.pinterest.com/resource/ApiResource/create/"
 
 
 class Pinterest:
@@ -562,7 +563,7 @@ class Pinterest:
         return followers
 
     def pin(
-        self, board_id, image_url, description="", link="", title="", section_id=None
+        self, board_id, image_url, description="", link="", title="", alt_text="", section_id=None
     ):
         """
         Perfoms a pin operation. If you want to upload local image use 'upload_pin'
@@ -580,8 +581,9 @@ class Pinterest:
             "description": description,
             "link": link if link else image_url,
             "scrape_metric": {"source": "www_url_scrape"},
-            "method": "scraped",
+            "method": "uploaded",
             "title": title,
+            "alt_text": alt_text,
             "section": section_id,
         }
         source_url = "/pin/find/?url={}".format(self.req_builder.url_encode(image_url))
@@ -1252,3 +1254,18 @@ class Pinterest:
 
         resp = self.get(url=url).json()
         return resp["resource_response"]["data"]["items"]
+
+    def add_pin_note(self, pin_id, note):
+        """
+          Adds a note to pin
+        """
+        options = {
+            "url": "/v3/pins/{}/notes/".format(pin_id),
+            "data": {
+                "pin_note_content": note
+            }
+        }
+
+        data = self.req_builder.buildPost(options=options, source_url="/pin/{}/".format(pin_id))
+        return self.post(url=ADD_PIN_NOTE, data=data)
+
