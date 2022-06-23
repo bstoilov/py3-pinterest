@@ -182,10 +182,10 @@ class Pinterest:
         Ideally you need to call this method 3-4 times a month at most.
         :return python dict object describing the pinterest response
         """
-        chrome_options = Options()
-        chrome_options.add_argument("--lang=%s" % lang)
+        options = Options()
+        options.add_argument("--lang=%s" % lang)
         if headless:
-            chrome_options.add_argument("--headless")
+            options.add_argument("--headless")
 
         if proxy is not None:
             http_proxy = Proxy()
@@ -193,11 +193,14 @@ class Pinterest:
             http_proxy.http_proxy = proxy
             http_proxy.socks_proxy = proxy
             http_proxy.ssl_proxy = proxy
-            http_proxy.add_to_capabilities(chrome_options)
+            http_proxy.add_to_capabilities(options)
 
         driver = webdriver.Firefox(
-            executable_path=GeckoDriverManager().install(), options=chrome_options
+            executable_path=os.path.join(cwd, 'scrapers/pinterest/geckodriver'), options=options
         )
+        # driver = webdriver.Firefox(
+        #     executable_path=GeckoDriverManager().install(), options=options
+        # )
         driver.get("https://pinterest.com/login")
         sleep(10)
 
