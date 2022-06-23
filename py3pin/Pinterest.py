@@ -195,6 +195,7 @@ class Pinterest:
             http_proxy.ssl_proxy = proxy
             http_proxy.add_to_capabilities(options)
 
+        cwd = os.getcwd()
         driver = webdriver.Firefox(
             executable_path=os.path.join(cwd, 'scrapers/pinterest/geckodriver'), options=options
         )
