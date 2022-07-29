@@ -372,7 +372,7 @@ class Pinterest:
         response = self.get(url=url).json()
         bookmark = response["resource"]["options"]["bookmarks"][0]
         self.bookmark_manager.add_bookmark(
-            primary="board_feed", secondary=username, bookmark=bookmark
+            primary="pins", secondary=username, bookmark=bookmark
         )
 
         return response["resource_response"]["data"]
