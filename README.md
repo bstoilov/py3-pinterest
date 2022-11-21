@@ -1,7 +1,7 @@
 # py3-pinterest
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Unofficial Pinterest API implemented in python 3 that can do all Pinterest tasks like comment, pin, repin, follow, unfollow and more.
+Unofficial Pinterest API implemented in python 3 that can do all Pinterest tasks like comment, pin, repin, follow, unfollow, and more.
 
 It is implemented by directly calling the pinterest servers, mimicking an actual browser, so you don't need pinterest API key.
 
@@ -23,7 +23,7 @@ If you see any issues, or find bugs feel free to report them here on the github 
 
 ```pinterest = Pinterest(email='your email goes here', password='password goes here', username='look in pinterest url', cred_root='cred root dir')```
 
-cred_root is the dir (automatically created if missing) that will store some cookies nad sessions, so you don't need to login before each request.
+cred_root is the dir (automatically created if missing) that will store some cookies and sessions, so you don't need to login before each request.
 Make sure you specify a path with read/write permissions.
 
 Proxies example:
@@ -106,7 +106,7 @@ pinner_username = response_data["resource_response"]["data"]["pinner"]["username
 pinner_id = response_data["resource_response"]["data"]["pinner"]["id"]
 
 # If you wanted to access this information in a different circumstance,
-# keep in mind that whatever your creating should be the first level under "data"
+# keep in mind that whatever you are creating should be the first level under "data"
 # I.e, I created a board, and I want to get the board ID. It would now be:
 
 board_id = response_data["resource_response"]["data"]["id"]
@@ -152,14 +152,14 @@ You can also pin and repin to sections.
 ### Follow
 ```pinterest.follow_user(user_id='target_user_id', username='target_username')```
 
-Follow limit is 300 per day, after that they might place you on watch list
+Follow limit is 300 per day, after that they might place you on a watch list
 
 
 ### Unfollow
 
 ```pinterest.unfollow_user(user_id='target_user_id', username='target_username')```
 
-Unfollow limit is 350 per day, after that they might place you on watch list
+Unfollow limit is 350 per day, after that they might place you on a watch list
 
 ### Get following
 
@@ -225,7 +225,4 @@ Current pinterest scopes are: pins, buyable_pins, my_pins, videos, boards
 
 ### Access to type suggestions you see in the search input
 ```pinterest.type_ahead(term='apple')```
-
-
-
 

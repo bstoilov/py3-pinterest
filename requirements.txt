@@ -1,4 +1,4 @@
 beautifulsoup4
 requests-toolbelt
-selenium
+selenium >= 4.6.0
 webdriver-manager
