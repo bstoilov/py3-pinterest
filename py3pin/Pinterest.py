@@ -205,10 +205,10 @@ class Pinterest:
                 EC.element_to_be_clickable((By.ID, "email"))
             )
 
-            driver.find_element_by_id("email").send_keys(self.email)
-            driver.find_element_by_id("password").send_keys(self.password)
+            driver.find_element(By.ID, "email").send_keys(self.email)
+            driver.find_element(By.ID, "password").send_keys(self.password)
 
-            logins = driver.find_elements_by_xpath("//*[contains(text(), 'Log in')]")
+            logins = driver.find_elements(By.XPATH, "//*[contains(text(), 'Log in')]")
 
             for login in logins:
                 login.click()
@@ -224,10 +224,11 @@ class Pinterest:
                 self.http.cookies.set(cookie["name"], cookie["value"])
 
             self.registry.update_all(self.http.cookies.get_dict())
+
+            print("Successfully logged in with account " + self.email)
         except Exception as e:
             print("Failed to login", e)
 
-        print("Successfully logged in with account " + self.email)
         driver.close()
 
     def logout(self):
@@ -285,7 +286,7 @@ class Pinterest:
     def boards(self, username=None, page_size=50):
         """
         The data returned is chunked, this comes from pinterest's rest api.
-        Some users might have huge number of boards that is why it make sense to chunk the data.
+        Some users might have huge number of boards. That is why it make sense to chunk the data.
         In order to obtain all boards this method needs to be called until it returns empty list
         :param username: target username, if left blank current user is assumed
         :param page_size: controls the batch size for each request
