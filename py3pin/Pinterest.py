@@ -284,7 +284,7 @@ class Pinterest:
 
         return result["resource_response"]["data"]
 
-    def boards(self, username=None, page_size=50):
+    def boards(self, username=None, page_size=50, reset_bookmark=False):
         """
         The data returned is chunked, this comes from pinterest's rest api.
         This method is batched. In order to obtain all boards
@@ -299,6 +299,14 @@ class Pinterest:
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="boards", secondary=username
         )
+
+        if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="boards", secondary=username
+                )
+            return []
+
         options = {
             "page_size": page_size,
             "privacy_filter": "all",
@@ -340,7 +348,7 @@ class Pinterest:
 
         return boards
 
-    def get_user_pins(self, username=None, page_size=250):
+    def get_user_pins(self, username=None, page_size=250, reset_bookmark=False):
         """
         Obtains all the pins of a user.
         This method is batched. In order to obtain all pins
@@ -359,6 +367,8 @@ class Pinterest:
         )
 
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(primary="pins", secondary=username)
             return []
 
         options = {
@@ -444,7 +454,7 @@ class Pinterest:
         data = self.req_builder.buildPost(options=options)
         return self.post(url=UNFOLLOW_USER_RESOURCE, data=data)
 
-    def get_following(self, username=None, page_size=250):
+    def get_following(self, username=None, page_size=250, reset_bookmark=False):
         """
         Get all users following this particular user.
         This method is batched. In order to obtain all following users
@@ -459,7 +469,12 @@ class Pinterest:
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="following", secondary=username
         )
+
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="following", secondary=username
+                )
             return []
 
         source_url = "/{}/_following/".format(self.email)
@@ -504,7 +519,7 @@ class Pinterest:
 
         return following
 
-    def get_user_followers(self, username=None, page_size=250):
+    def get_user_followers(self, username=None, page_size=250, reset_bookmark=False):
         """
         Obtains a list of user's followers.
         This method is batched. In order to obtain all user followers
@@ -521,6 +536,10 @@ class Pinterest:
         )
 
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="followers", secondary=username
+                )
             return []
 
         options = {
@@ -701,7 +720,7 @@ class Pinterest:
 
         raise Exception("Pin data not found. Probably pintereset chagned their API")
 
-    def get_comments(self, pin_id, page_size=50):
+    def get_comments(self, pin_id, page_size=50, reset_bookmark=False):
         """
         Get comments on a pin.
         This method is batched. In order to obtain all comments
@@ -717,6 +736,10 @@ class Pinterest:
         )
 
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="pin_comments", secondary=pin_id
+                )
             return []
 
         options = {
@@ -839,7 +862,9 @@ class Pinterest:
         data = self.req_builder.buildPost(options=options)
         return self.post(url=BOARD_DELETE_INVITE_RESOURCE, data=data)
 
-    def visual_search(self, pin_data, x=None, y=None, w=None, h=None, padding=10):
+    def visual_search(
+        self, pin_data, x=None, y=None, w=None, h=None, padding=10, reset_bookmark=False
+    ):
         """
         Gives access to pinterest search api
         This method is batched. In order to obtain all search results
@@ -873,6 +898,10 @@ class Pinterest:
             primary="visual_search", secondary=source_url
         )
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="visual_search", secondary=source_url
+                )
             return []
 
         options = {
@@ -896,7 +925,7 @@ class Pinterest:
 
         return resp["resource_response"]["data"]["results"]
 
-    def search(self, scope, query, page_size=250):
+    def search(self, scope, query, page_size=250, reset_bookmark=False):
         """
         Gives access to pinterest search api
         This method is batched. In order to obtain all search results
@@ -913,6 +942,8 @@ class Pinterest:
         )
 
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(primary="search", secondary=query)
             return []
 
         terms = query.split(" ")
@@ -946,7 +977,7 @@ class Pinterest:
         )
         return resp["resource_response"]["data"]["results"]
 
-    def board_recommendations(self, board_id="", page_size=50):
+    def board_recommendations(self, board_id="", page_size=50, reset_bookmark=False):
         """
         This gives the list of pins you see when you open a board and click on 'More Ideas'
         This method is batched. In order to obtain all board recommendations
@@ -960,6 +991,10 @@ class Pinterest:
         )
 
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="boards", secondary=board_id
+                )
             return []
 
         options = {
@@ -1002,7 +1037,7 @@ class Pinterest:
                 urls.append(item["url"])
         return urls
 
-    def home_feed(self, page_size=100):
+    def home_feed(self, page_size=100, reset_bookmark=False):
         """
         This gives the list of pins you see when you open the pinterest home page.
         This method is batched. In order to obtain all home feed items
@@ -1012,6 +1047,8 @@ class Pinterest:
         """
         next_bookmark = self.bookmark_manager.get_bookmark(primary="home_feed")
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(primary="home_feed")
             return []
 
         options = {
@@ -1037,7 +1074,7 @@ class Pinterest:
 
         return response["resource_response"]["data"]
 
-    def board_feed(self, board_id="", page_size=250):
+    def board_feed(self, board_id="", page_size=250, reset_bookmark=False):
         """
         Gives a list of all pins in a board.
         This method is batched. In order to obtain all pins in a board
@@ -1048,6 +1085,10 @@ class Pinterest:
         )
 
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="board_feed", secondary=board_id
+                )
             return []
 
         options = {
