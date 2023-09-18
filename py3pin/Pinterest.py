@@ -178,7 +178,7 @@ class Pinterest:
         Logs user in with the provided credentials
         User session is stored in the 'cred_root' folder
         and reused so there is no need to login every time.
-        Pinterest sessions lasts for about 15 days
+        Pinterest sessions last for about 15 days
         Ideally you need to call this method 3-4 times a month at most.
         :return python dict object describing the pinterest response
         """
@@ -233,7 +233,8 @@ class Pinterest:
 
     def logout(self):
         """
-        Logs current user out. Takes few seconds for the session to be invalidated on pinterest's side
+        Logs the current user out.
+        Takes a few seconds for the session to be invalidated on pinterest's side
         """
         options = {"disable_auth_failure_redirect": True}
 
@@ -283,12 +284,12 @@ class Pinterest:
 
         return result["resource_response"]["data"]
 
-    def boards(self, username=None, page_size=50):
+    def boards(self, username=None, page_size=50, reset_bookmark=False):
         """
         The data returned is chunked, this comes from pinterest's rest api.
-        Some users might have huge number of boards. That is why it make sense to chunk the data.
-        In order to obtain all boards this method needs to be called until it returns empty list
-        :param username: target username, if left blank current user is assumed
+        This method is batched. In order to obtain all boards
+        you need to call it until an empty list is returned.
+        :param username: target username. If left blank, the current user is assumed
         :param page_size: controls the batch size for each request
         :return python dict describing all the boards of a user.
         """
@@ -298,6 +299,14 @@ class Pinterest:
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="boards", secondary=username
         )
+
+        if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="boards", secondary=username
+                )
+            return []
+
         options = {
             "page_size": page_size,
             "privacy_filter": "all",
@@ -339,17 +348,17 @@ class Pinterest:
 
         return boards
 
-    def get_user_pins(self, username=None, page_size=250):
+    def get_user_pins(self, username=None, page_size=250, reset_bookmark=False):
         """
         Obtains all the pins of a user.
-        This method is batched, meaning in order to obtain all pins you need
-        to call it until empty list is returned.
+        This method is batched. In order to obtain all pins
+        you need to call it until an empty list is returned.
         :return all pins under all pins board
         :param username: target user, if left blank current user is assumed
         """
         if username is None:
             username = self.username
-            own_profile = True 
+            own_profile = True
         else:
             own_profile = False
 
@@ -358,13 +367,15 @@ class Pinterest:
         )
 
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(primary="pins", secondary=username)
             return []
 
         options = {
             "username": username,
             "is_own_profile_pins": own_profile,
             "field_set_key": "grid_item",
-            "pin_filter": None,  
+            "pin_filter": None,
             "bookmarks": [next_bookmark],
             "page_size": page_size,
         }
@@ -386,7 +397,7 @@ class Pinterest:
         :param name: board name (should be unique per user)
         :param description: board description
         :param category: if you have defined categories (it is not visible to external users)
-        :param privace: can be public or private
+        :param privacy: can be public or private
         :param layout: looks like a legacy parameter but it is mandatory (can be left as default)
         """
         options = {
@@ -415,7 +426,7 @@ class Pinterest:
 
     def unfollow_board(self, board_id):
         """
-        UnFollows a board with current user.
+        Unfollows a board with current user.
         :param board_id: the id of the board to follow
         :return python dict with the pinterest response
         """
@@ -435,7 +446,7 @@ class Pinterest:
 
     def unfollow_user(self, user_id):
         """
-        UnFollows a user with current user.
+        Unfollows a user with current user.
         :param user_id: the id of the user to follow
         :return python dict with the pinterest response
         """
@@ -443,11 +454,11 @@ class Pinterest:
         data = self.req_builder.buildPost(options=options)
         return self.post(url=UNFOLLOW_USER_RESOURCE, data=data)
 
-    def get_following(self, username=None, page_size=250):
+    def get_following(self, username=None, page_size=250, reset_bookmark=False):
         """
         Get all users following this particular user.
-        The response of this method is batched, meaning it needs to be called
-        until empty list is returned
+        This method is batched. In order to obtain all following users
+        you need to call it until an empty list is returned.
         :param username: target user, if left blank current user is assumed
         :param page_size:
         :return: python dict describing the 'following' list
@@ -458,7 +469,12 @@ class Pinterest:
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="following", secondary=username
         )
+
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="following", secondary=username
+                )
             return []
 
         source_url = "/{}/_following/".format(self.email)
@@ -503,10 +519,11 @@ class Pinterest:
 
         return following
 
-    def get_user_followers(self, username=None, page_size=250):
+    def get_user_followers(self, username=None, page_size=250, reset_bookmark=False):
         """
         Obtains a list of user's followers.
-        The response from this method is batched, meaning it needs to be called until empty list is returned.
+        This method is batched. In order to obtain all user followers
+        you need to call it until an empty list is returned.
         :param username: target username, is left blank current user is assumed
         :param page_size: batch size
         :return: python dict describing user followers
@@ -519,6 +536,10 @@ class Pinterest:
         )
 
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="followers", secondary=username
+                )
             return []
 
         options = {
@@ -564,16 +585,24 @@ class Pinterest:
         return followers
 
     def pin(
-        self, board_id, image_url, description="", link="", title="", alt_text="", section_id=None
+        self,
+        board_id,
+        image_url,
+        description="",
+        link="",
+        title="",
+        alt_text="",
+        section_id=None,
     ):
         """
-        Perfoms a pin operation. If you want to upload local image use 'upload_pin'
+        Perfoms a pin operation.
+        If you want to upload a local image use 'upload_pin'
         :param board_id: id of the target board (current user should have rights to pin to it)
         :param image_url: web url of an image (not local one)
-        :param description: pin description (can be blank)
-        :param link: link to include (can be blank)
+        :param description: pin description. Optional
+        :param link: link to include. Optional
         :param title: title can be blank
-        :param section_id: board section should be previously defined and its optional
+        :param section_id: board section should be previously defined. Optional
         :return: python dict describing the pinterest response
         """
         options = {
@@ -596,7 +625,7 @@ class Pinterest:
         self, board_id, image_file, description="", link="", title="", section_id=None
     ):
         """
-        This method is simmilar to 'pin' except the image for the pin is local file.
+        This method is similar to 'pin' except the image for the pin is a local file.
         """
         image_url = self._upload_image(image_file=image_file).json()["image_url"]
         return self.pin(
@@ -613,7 +642,7 @@ class Pinterest:
         Repin/Save action
         :param board_id: board id, current user should have right to pin to this board
         :param pin_id: pin id to repin
-        :param section_id:  board section should be previously defined and its optional
+        :param section_id:  board section should be previously defined. Optional
         :return: python dict describing the pinterest response
         """
         options = {
@@ -644,7 +673,7 @@ class Pinterest:
 
     def delete_pin(self, pin_id):
         """
-        Deletes a pint the user owns
+        Deletes a pin the user owns
         :param pin_id: pin id to delete
         :return: python dict describing the pinterest response
         """
@@ -682,17 +711,20 @@ class Pinterest:
         scripts = soup.findAll("script")
         pin_data = {}
         for s in scripts:
-            if 'id' in s.attrs and s.attrs['id'] == '__PWS_DATA__':
-                pinJsonData = json.loads(s.contents[0])['props']['initialReduxState']['resources']['PinResource']
-                pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]['data']
+            if "id" in s.attrs and s.attrs["id"] == "__PWS_DATA__":
+                pinJsonData = json.loads(s.contents[0])["props"]["initialReduxState"][
+                    "resources"
+                ]["PinResource"]
+                pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]["data"]
                 return pinJsonData
 
         raise Exception("Pin data not found. Probably pintereset chagned their API")
 
-    def get_comments(self, pin_id, page_size=50):
+    def get_comments(self, pin_id, page_size=50, reset_bookmark=False):
         """
         Get comments on a pin.
-        The response is batched, meaning this method should be called util empty list is returned
+        This method is batched. In order to obtain all comments
+        you need to call it until an empty list is returned.
         :param pin_id: target pin id
         :param page_size:  batch size
         :return: list of comment objects
@@ -704,6 +736,10 @@ class Pinterest:
         )
 
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="pin_comments", secondary=pin_id
+                )
             return []
 
         options = {
@@ -733,7 +769,7 @@ class Pinterest:
     def get_comments_all(self, pin_id):
         """
         Obtains all comments of a pin.
-        NOTE: IF pin has too many comments this might cause memory issues.
+        NOTE: If pin has too many comments this might cause memory issues.
         In such cases use 'get_comments' which is batched
         :param pin_id:
         :return: list of comment objects
@@ -772,7 +808,8 @@ class Pinterest:
     def get_board_invites(self, board_id, page_size=100):
         """
         Returns a list of users invited to the specified board.
-        This method is batched and needs to be called until empty list is returned.
+        This method is batched. In order to obtain all board invites
+        you need to call it until an empty list is returned.
         :param board_id: id of target board
         :param page_size: batch size
         :return: list of board objects
@@ -825,10 +862,13 @@ class Pinterest:
         data = self.req_builder.buildPost(options=options)
         return self.post(url=BOARD_DELETE_INVITE_RESOURCE, data=data)
 
-    def visual_search(self, pin_data, x=None, y=None, w=None, h=None, padding=10):
+    def visual_search(
+        self, pin_data, x=None, y=None, w=None, h=None, padding=10, reset_bookmark=False
+    ):
         """
         Gives access to pinterest search api
-        This method is batched, meaning is needs to be called until empty list is returned.
+        This method is batched. In order to obtain all search results
+        you need to call it until an empty list is returned.
         :param pin_data: pin data
         :param x: x position of the cropped part of the image used for searching
         :param y: y position of the cropped part of the image used for searching
@@ -858,6 +898,10 @@ class Pinterest:
             primary="visual_search", secondary=source_url
         )
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="visual_search", secondary=source_url
+                )
             return []
 
         options = {
@@ -881,12 +925,13 @@ class Pinterest:
 
         return resp["resource_response"]["data"]["results"]
 
-    def search(self, scope, query, page_size=250):
+    def search(self, scope, query, page_size=250, reset_bookmark=False):
         """
         Gives access to pinterest search api
-        This method is batched, meaning is needs to be called until empty list is returned.
+        This method is batched. In order to obtain all search results
+        you need to call it until an empty list is returned.
         NOTE: there is a max number of results set by Pinterest -> 1000
-        :param scope: can be pins, buyable_pins, my_pins, videos, boards
+        :param scope: can be pins, buyable_pins, my_pins, videos, or boards
         :param query: search phrase
         :param page_size: batch size
         :return: list of search results
@@ -897,6 +942,8 @@ class Pinterest:
         )
 
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(primary="search", secondary=query)
             return []
 
         terms = query.split(" ")
@@ -930,20 +977,24 @@ class Pinterest:
         )
         return resp["resource_response"]["data"]["results"]
 
-    def board_recommendations(self, board_id="", page_size=50):
+    def board_recommendations(self, board_id="", page_size=50, reset_bookmark=False):
         """
         This gives the list of pins you see when you open a board and click on 'More Ideas'
-        This method is batched and needs to be called until empty list is returned in order to obtain all
-        of the results.
+        This method is batched. In order to obtain all board recommendations
+        you need to call it until an empty list is returned.
         :param board_id: target board id
         :param page_size: batch size
-        :return:
+        :return: list of board recommendations
         """
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="boards", secondary=board_id
         )
 
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="boards", secondary=board_id
+                )
             return []
 
         options = {
@@ -986,16 +1037,18 @@ class Pinterest:
                 urls.append(item["url"])
         return urls
 
-    def home_feed(self, page_size=100):
+    def home_feed(self, page_size=100, reset_bookmark=False):
         """
         This gives the list of pins you see when you open the pinterest home page.
-        This method is batched, in order to obtain all home feed items
-        it needs to be called until empty list is returned
+        This method is batched. In order to obtain all home feed items
+        you need to call it until an empty list is returned.
         :param page_size:
         :return:
         """
         next_bookmark = self.bookmark_manager.get_bookmark(primary="home_feed")
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(primary="home_feed")
             return []
 
         options = {
@@ -1021,17 +1074,21 @@ class Pinterest:
 
         return response["resource_response"]["data"]
 
-    def board_feed(self, board_id="", page_size=250):
+    def board_feed(self, board_id="", page_size=250, reset_bookmark=False):
         """
         Gives a list of all pins in a board.
-        This method is batched, meaning in order to obtain all pins in a board you need
-        to call it until empty list is returned.
+        This method is batched. In order to obtain all pins in a board
+        you need to call it until an empty list is returned.
         """
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="board_feed", secondary=board_id
         )
 
         if next_bookmark == "-end-":
+            if reset_bookmark:
+                self.bookmark_manager.reset_bookmark(
+                    primary="board_feed", secondary=board_id
+                )
             return []
 
         options = {
@@ -1192,8 +1249,8 @@ class Pinterest:
     def get_section_pins(self, section_id="", page_size=250, reset_bookmark=False):
         """
         Returns a list of all pins in a board section.
-        This method is batched meaning in order to obtain all pins in the section
-        you need to call is until empty list is returned
+        This method is batched. In order to obtain all pins in the section
+        you need to call it until an empty list is returned.
         """
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="section_pins", secondary=section_id
@@ -1238,7 +1295,7 @@ class Pinterest:
         returns Pinterest predictions for given term.
         Response may include user profiles.
         Example term "dada" gives ["dadaism","dada art"] etc.
-        :param scope:  always "pins"
+        :param scope: always "pins"
         :param count: max guess number
         :param term: word to be typed ahead
         :return: response items
@@ -1258,15 +1315,14 @@ class Pinterest:
 
     def add_pin_note(self, pin_id, note):
         """
-          Adds a note to pin
+        Adds a note to a pin
         """
         options = {
             "url": "/v3/pins/{}/notes/".format(pin_id),
-            "data": {
-                "pin_note_content": note
-            }
+            "data": {"pin_note_content": note},
         }
 
-        data = self.req_builder.buildPost(options=options, source_url="/pin/{}/".format(pin_id))
+        data = self.req_builder.buildPost(
+            options=options, source_url="/pin/{}/".format(pin_id)
+        )
         return self.post(url=ADD_PIN_NOTE, data=data)
-
