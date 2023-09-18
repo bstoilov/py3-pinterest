@@ -623,7 +623,7 @@ class Pinterest:
         return self.post(url=PIN_RESOURCE_CREATE, data=data)
 
     def upload_pin(
-        self, board_id, image_file, description="", link="", title="", section_id=None
+        self, board_id, image_file, description="", link="", title="", alt_text = "", section_id=None
     ):
         """
         This method is similar to 'pin' except the image for the pin is a local file.
@@ -635,6 +635,7 @@ class Pinterest:
             image_url=image_url,
             link=link,
             title=title,
+            alt_text=alt_text,
             section_id=section_id,
         )
 
