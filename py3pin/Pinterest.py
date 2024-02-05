@@ -714,11 +714,7 @@ class Pinterest:
         pin_data = None
         for s in scripts:
             if "data-relay-response" in s.attrs and s.attrs["data-relay-response"] == "true":
-                # pinJsonData = json.loads(s.contents[0])["props"]["initialReduxState"][
-                #     "resources"
-                # ]["PinResource"]
                 pinJsonData = json.loads(s.contents[0])["response"]["data"]["v3GetPinQuery"]["data"]
-                # pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]["data"]
                 pin_data = pinJsonData
         if pin_data:
             return pin_data
