@@ -713,11 +713,12 @@ class Pinterest:
         scripts = soup.findAll("script")
         pin_data = {}
         for s in scripts:
-            if "id" in s.attrs and s.attrs["id"] == "__PWS_DATA__":
-                pinJsonData = json.loads(s.contents[0])["props"]["initialReduxState"][
-                    "resources"
-                ]["PinResource"]
-                pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]["data"]
+            if "data-relay-response" in s.attrs and s.attrs["data-relay-response"] == "true":
+                # pinJsonData = json.loads(s.contents[0])["props"]["initialReduxState"][
+                #     "resources"
+                # ]["PinResource"]
+                pinJsonData = json.loads(s.contents[0])["response"]["data"]["v3GetPinQuery"]["data"]
+                # pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]["data"]
                 return pinJsonData
 
         raise Exception("Pin data not found. Probably pintereset chagned their API")
