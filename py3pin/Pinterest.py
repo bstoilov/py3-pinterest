@@ -184,7 +184,7 @@ class Pinterest:
         :return python dict object describing the pinterest response
         """
         chrome_options = Options()
-        chrome_options.add_argument("--lang=%s" % lang)
+        chrome_options.add_experimental_option('prefs', {'intl.accept_languages': lang})
         if headless:
             chrome_options.add_argument("--headless")
 
