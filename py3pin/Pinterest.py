@@ -711,14 +711,13 @@ class Pinterest:
         resp = self.get(url=LOAD_PIN_URL_FORMAT.format(pin_id))
         soup = BeautifulSoup(resp.text, "html.parser")
         scripts = soup.findAll("script")
-        pin_data = {}
+        pin_data = None
         for s in scripts:
-            if "id" in s.attrs and s.attrs["id"] == "__PWS_DATA__":
-                pinJsonData = json.loads(s.contents[0])["props"]["initialReduxState"][
-                    "resources"
-                ]["PinResource"]
-                pinJsonData = pinJsonData[list(pinJsonData.keys())[0]]["data"]
-                return pinJsonData
+            if "data-relay-response" in s.attrs and s.attrs["data-relay-response"] == "true":
+                pinJsonData = json.loads(s.contents[0])["response"]["data"]["v3GetPinQuery"]["data"]
+                pin_data = pinJsonData
+        if pin_data:
+            return pin_data
 
         raise Exception("Pin data not found. Probably pintereset chagned their API")
 
