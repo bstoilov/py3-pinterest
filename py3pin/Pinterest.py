@@ -10,7 +10,7 @@ from py3pin.Registry import Registry
 from py3pin.RequestBuilder import RequestBuilder
 from requests.structures import CaseInsensitiveDict
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver import ChromeOptions
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -183,7 +183,7 @@ class Pinterest:
         Ideally you need to call this method 3-4 times a month at most.
         :return python dict object describing the pinterest response
         """
-        chrome_options = Options()
+        chrome_options = ChromeOptions()
         chrome_options.add_experimental_option('prefs', {'intl.accept_languages': lang})
         if headless:
             chrome_options.add_argument("--headless")
@@ -196,9 +196,7 @@ class Pinterest:
             http_proxy.ssl_proxy = proxy
             http_proxy.add_to_capabilities(chrome_options)
 
-        driver = webdriver.Chrome(
-                service=Service(executable_path=ChromeDriverManager().install()), options=chrome_options
-        )
+        driver = webdriver.Chrome(options=chrome_options)
         driver.get("https://pinterest.com/login")
 
         try:
