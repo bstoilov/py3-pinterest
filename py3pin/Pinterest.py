@@ -17,6 +17,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+
 
 AGENT_STRING = (
     "Mozilla/5.0 (Windows NT 6.1; Win64; x64) "
@@ -204,10 +206,11 @@ class Pinterest:
                 EC.element_to_be_clickable((By.ID, "email"))
             )
 
-            driver.find_element(By.ID, "email").send_keys(self.email)
-            driver.find_element(By.ID, "password").send_keys(self.password)
+            driver.find_element(by = By.ID, value='email').send_keys(self.email)
+            driver.find_element(by= By.ID, value="password").send_keys(self.password)
 
-            logins = driver.find_elements(By.XPATH, "//*[contains(text(), 'Log in')]")
+            logins = driver.find_elements(by=By.XPATH, value="//*[contains(text(), 'Log in')]")
+
 
             for login in logins:
                 login.click()
