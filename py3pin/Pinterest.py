@@ -176,14 +176,20 @@ class Pinterest:
             "POST", url=url, data=data, files=files, extra_headers=headers
         )
 
-    def login(self, headless=True, wait_time=15, proxy=None, lang="en"):
+    def login(self, headless=True, wait_time=15, proxy=None, lang="en", raspberry=False):
         """
-        Logs user in with the provided credentials
+        Logs user in with the provided credentials.
         User session is stored in the 'cred_root' folder
         and reused so there is no need to login every time.
         Pinterest sessions last for about 15 days
         Ideally you need to call this method 3-4 times a month at most.
-        :return python dict object describing the pinterest response
+
+        :param headless: If True, runs Chrome in headless mode (without GUI). Default is True.
+        :param wait_time: Maximum time to wait for elements to load. Default is 15 seconds.
+        :param proxy: Proxy server address to use. Default is None.
+        :param lang: Language to use for the Pinterest interface. Default is "en".
+        :param raspberry: if True, the code will be configured for Raspberry Pi. Default is False.
+        :return: Python dict object describing the Pinterest response.
         """
         chrome_options = ChromeOptions()
         chrome_options.add_experimental_option('prefs', {'intl.accept_languages': lang})
@@ -198,7 +204,16 @@ class Pinterest:
             http_proxy.ssl_proxy = proxy
             http_proxy.add_to_capabilities(chrome_options)
 
-        service = Service(ChromeDriverManager().install())
+        # For other systems, we assume ChromeDriver is installed in a specific location.
+        if raspberry==False:
+            service = Service(ChromeDriverManager().install())
+        # For Raspberry Pi, use the locally installed ChromeDriver
+        else:
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--remote-debugging-port=9222")
+            service = Service("/usr/bin/chromedriver")
+            
         driver = webdriver.Chrome(service=service,options=chrome_options)
         driver.get("https://pinterest.com/login")
 
