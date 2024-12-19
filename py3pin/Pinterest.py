@@ -168,8 +168,8 @@ class Pinterest:
 
         return response
 
-    def get(self, url):
-        return self.request("GET", url=url)
+    def get(self, url, headers=None):
+        return self.request("GET", url=url, extra_headers=headers)
 
     def post(self, url, data=None, files=None, headers=None):
         return self.request(
@@ -1121,7 +1121,7 @@ class Pinterest:
         }
 
         url = self.req_builder.buildGet(url=BOARD_FEED_RESOURCE, options=options)
-        response = self.get(url=url).json()
+        response = self.get(url=url, headers={'X-Pinterest-PWS-Handler':'www/[username].js'}).json()
         bookmark = response["resource"]["options"]["bookmarks"][0]
         self.bookmark_manager.add_bookmark(
             primary="board_feed", secondary=board_id, bookmark=bookmark
