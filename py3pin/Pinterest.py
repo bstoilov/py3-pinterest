@@ -30,20 +30,18 @@ HOME_PAGE = "https://www.pinterest.com/"
 LOGIN_PAGE = "https://www.pinterest.com/login/?referrer=home_page"
 CREATE_USER_SESSION = "https://www.pinterest.com/resource/UserSessionResource/create/"
 DELETE_USER_SESSION = "https://www.pinterest.com/resource/UserSessionResource/delete/"
-USER_RESOURCE = "https://www.pinterest.com/_ngjs/resource/UserResource/get/"
+USER_RESOURCE = "https://www.pinterest.com/resource/UserResource/get/"
 BOARD_PICKER_RESOURCE = (
     "https://www.pinterest.com/resource/BoardPickerBoardsResource/get/"
 )
-BOARDS_RESOURCE = "https://www.pinterest.com/_ngjs/resource/BoardsResource/get/"
+BOARDS_RESOURCE = "https://www.pinterest.com/resource/BoardsResource/get/"
 CREATE_BOARD_RESOURCE = "https://www.pinterest.com/resource/BoardResource/create/"
-FOLLOW_BOARD_RESOURCE = "https://www.pinterest.com/resource/BoardFollowResource/create/"
-UNFOLLOW_BOARD_RESOURCE = (
-    "https://www.pinterest.com/resource/BoardFollowResource/delete/"
-)
+FOLLOW_BOARD_RESOURCE = "https://www.pinterest.com/resource/ApiResource/update/"
+UNFOLLOW_BOARD_RESOURCE = "https://www.pinterest.com/resource/ApiResource/delete/"
 FOLLOW_USER_RESOURCE = "https://www.pinterest.com/resource/UserFollowResource/create/"
 UNFOLLOW_USER_RESOURCE = "https://www.pinterest.com/resource/UserFollowResource/delete/"
 USER_FOLLOWING_RESOURCE = (
-    "https://www.pinterest.com/_ngjs/resource/UserFollowingResource/get/"
+    "https://www.pinterest.com/resource/UserFollowingResource/get/"
 )
 USER_FOLLOWERS_RESOURCE = (
     "https://www.pinterest.com/resource/UserFollowersResource/get/"
@@ -54,12 +52,6 @@ PIN_LIKE_RESOURCE = "https://www.pinterest.com/resource/PinLikeResource/create/"
 PIN_UNLIKE_RESOURCE = "https://www.pinterest.com/resource/PinLikeResource/delete/"
 DELETE_PIN_RESOURCE = "https://www.pinterest.com/resource/PinResource/delete/"
 PIN_COMMENT_RESOURCE = "https://www.pinterest.com/resource/PinCommentResource/create/"
-BOARD_INVITE_RESOURCE = (
-    "https://www.pinterest.com/_ngjs/resource/BoardInviteResource/create/"
-)
-BOARD_DELETE_INVITE_RESOURCE = (
-    "https://www.pinterest.com/_ngjs/resource/BoardCollaboratorResource/delete/"
-)
 VISUAL_LIVE_SEARCH_RESOURCE = (
     "https://www.pinterest.com/resource/VisualLiveSearchResource/get/"
 )
@@ -68,29 +60,30 @@ TYPE_AHEAD_RESOURCE = (
     "https://www.pinterest.com/resource/AdvancedTypeaheadResource/get/"
 )
 BOARD_RECOMMEND_RESOURCE = (
-    "https://www.pinterest.com/_ngjs/resource/BoardContentRecommendationResource/get/"
+    "https://www.pinterest.com/resource/BoardContentRecommendationResource/get/"
 )
 PINNABLE_IMAGES_RESOURCE = (
-    "https://www.pinterest.com/_ngjs/resource/FindPinImagesResource/get/"
+    "https://www.pinterest.com/resource/FindPinImagesResource/get/"
 )
 BOARD_FEED_RESOURCE = "https://www.pinterest.com/resource/BoardFeedResource/get/"
 USER_HOME_FEED_RESOURCE = (
-    "https://www.pinterest.com/_ngjs/resource/UserHomefeedResource/get/"
+    "https://www.pinterest.com/resource/UserHomefeedResource/get/"
 )
 USER_PIN_RESOURCE = "https://www.pinterest.com/resource/UserPinsResource/get/"
 BASE_SEARCH_RESOURCE = "https://www.pinterest.com/resource/BaseSearchResource/get/"
 BOARD_INVITES_RESOURCE = (
-    "https://www.pinterest.com/_ngjs/resource/BoardInvitesResource/get/"
+    "https://www.pinterest.com/resource/BoardInvitesResource/get/"
 )
 CREATE_COMMENT_RESOURCE = (
-    "https://www.pinterest.com/_ngjs/resource/AggregatedCommentResource/create/"
+    "https://www.pinterest.com/resource/AggregatedCommentResource/create/"
 )
 GET_PIN_COMMENTS_RESOURCE = (
-    "https://www.pinterest.com/_ngjs/resource/AggregatedCommentFeedResource/get/"
+    "https://www.pinterest.com/resource/AggregatedCommentFeedResource/get/"
 )
 LOAD_PIN_URL_FORMAT = "https://www.pinterest.com/pin/{}/"
+PIN_RESOURCE_GET = "https://www.pinterest.com/resource/PinResource/get/"
 DELETE_COMMENT = (
-    "https://www.pinterest.com/_ngjs/resource/AggregatedCommentResource/delete/"
+    "https://www.pinterest.com/resource/AggregatedCommentResource/delete/"
 )
 CONVERSATION_RESOURCE = "https://www.pinterest.com/resource/ConversationsResource/get/"
 CONVERSATION_RESOURCE_CREATE = (
@@ -111,8 +104,6 @@ GET_BOARD_SECTION_PINS = (
     "https://www.pinterest.com/resource/BoardSectionPinsResource/get/"
 )
 UPLOAD_IMAGE = "https://www.pinterest.com/upload-image/"
-BOARD_FOLLOWERS = "https://pinterest.com/resource/BoardFollowersResource/get/"
-ADD_PIN_NOTE = "https://www.pinterest.com/resource/ApiResource/create/"
 
 
 class Pinterest:
@@ -169,6 +160,10 @@ class Pinterest:
         return response
 
     def get(self, url, headers=None):
+        if headers is None:
+            headers = {}
+        if "X-Pinterest-PWS-Handler" not in headers:
+            headers["X-Pinterest-PWS-Handler"] = "www/[username].js"
         return self.request("GET", url=url, extra_headers=headers)
 
     def post(self, url, data=None, files=None, headers=None):
@@ -227,9 +222,9 @@ class Pinterest:
 
             logins = driver.find_elements(by=By.XPATH, value="//*[contains(text(), 'Log in')]")
 
-
             for login in logins:
-                login.click()
+                if login.is_displayed():
+                    login.click()
 
             WebDriverWait(driver, wait_time).until(
                 EC.invisibility_of_element((By.ID, "email"))
@@ -259,30 +254,6 @@ class Pinterest:
         data = self.req_builder.buildPost(options=options)
         return self.post(url=DELETE_USER_SESSION, data=data)
 
-    def get_board_followers(self, board_id, page_size=50, source_url=None):
-        next_bookmark = self.bookmark_manager.get_bookmark(
-            primary="board_followers", secondary=board_id
-        )
-        if next_bookmark == "-end-":
-            return []
-
-        options = {
-            "isPrefetch": False,
-            "board_id": board_id,
-            "page_size": page_size,
-            "no_fetch_context_on_resource": False,
-        }
-        url = self.req_builder.buildGet(
-            url=BOARD_FOLLOWERS, options=options, source_url=source_url
-        )
-
-        resp = self.get(url=url).json()
-
-        bookmark = resp["resource"]["options"]["bookmarks"][0]
-        self.bookmark_manager.add_bookmark(
-            primary="board_followers", secondary=board_id, bookmark=bookmark
-        )
-        return resp["resource_response"]["data"]
 
     def get_user_overview(self, username=None):
         """
@@ -438,7 +409,7 @@ class Pinterest:
         :param board_id: the id of the board to follow
         :return python dict with the pinterest response
         """
-        options = {"board_id": board_id}
+        options = {"url": "/v3/boards/{}/follow/".format(board_id)}
         data = self.req_builder.buildPost(options=options)
         return self.post(url=FOLLOW_BOARD_RESOURCE, data=data)
 
@@ -448,7 +419,7 @@ class Pinterest:
         :param board_id: the id of the board to follow
         :return python dict with the pinterest response
         """
-        options = {"board_id": board_id}
+        options = {"url": "/v3/boards/{}/follow/".format(board_id)}
         data = self.req_builder.buildPost(options=options)
         return self.post(url=UNFOLLOW_BOARD_RESOURCE, data=data)
 
@@ -725,18 +696,20 @@ class Pinterest:
         :param pin_id: pin id to load
         :return: python dict describing the pinterest response
         """
-        resp = self.get(url=LOAD_PIN_URL_FORMAT.format(pin_id))
-        soup = BeautifulSoup(resp.text, "html.parser")
-        scripts = soup.findAll("script")
-        pin_data = None
-        for s in scripts:
-            if "data-relay-response" in s.attrs and s.attrs["data-relay-response"] == "true":
-                pinJsonData = json.loads(s.contents[0])["response"]["data"]["v3GetPinQuery"]["data"]
-                pin_data = pinJsonData
-        if pin_data:
-            return pin_data
-
-        raise Exception("Pin data not found. Probably pintereset chagned their API")
+        options = {
+            "id": pin_id,
+            "field_set_key": "auth_web_main_pin",
+            "add_fields": "pin.gen_ai_topics",
+            "noCache": True,
+            "fetch_visual_search_objects": True,
+            "get_page_metadata": False,
+        }
+        source_url = "/pin/{}/".format(pin_id)
+        url = self.req_builder.buildGet(
+            url=PIN_RESOURCE_GET, options=options, source_url=source_url
+        )
+        resp = self.get(url=url).json()
+        return resp["resource_response"]["data"]
 
     def get_comments(self, pin_id, page_size=50, reset_bookmark=False):
         """
@@ -812,16 +785,6 @@ class Pinterest:
         data = self.req_builder.buildPost(options=options, source_url=source_url)
         return self.post(url=DELETE_COMMENT, data=data)
 
-    def invite(self, board_id, user_id):
-        """
-        Invite a user to one of the current user's boards
-        :param board_id: board to invite to
-        :param user_id: user to invite
-        :return: python dict describing the pinterest response
-        """
-        options = {"board_id": board_id, "invited_user_ids": [user_id]}
-        data = self.req_builder.buildPost(options=options)
-        return self.post(url=BOARD_INVITE_RESOURCE, data=data)
 
     def get_board_invites(self, board_id, page_size=100):
         """
@@ -863,22 +826,6 @@ class Pinterest:
 
         return results
 
-    def delete_invite(self, board_id, invited_user_id, also_block=False):
-        """
-        Deletes invite for a board
-        :param board_id: board id
-        :param invited_user_id: invited user id
-        :param also_block: you can also block the user (default false)
-        :return: python dict describing the pinterest response
-        """
-        options = {
-            "ban": also_block,
-            "board_id": board_id,
-            "field_set_key": "boardEdit",
-            "invited_user_id": invited_user_id,
-        }
-        data = self.req_builder.buildPost(options=options)
-        return self.post(url=BOARD_DELETE_INVITE_RESOURCE, data=data)
 
     def visual_search(
         self, pin_data, x=None, y=None, w=None, h=None, padding=10, reset_bookmark=False
@@ -1129,12 +1076,12 @@ class Pinterest:
 
         return response["resource_response"]["data"]
 
-    def initiate_conversation(self, user_ids, message="hi"):
+    def initiate_conversation(self, user_ids):
         """
         Initiates a new conversation with one or more users
         :return: python dict object describing the pinterest response
         """
-        options = {"user_ids": user_ids, "text": message}
+        options = {"user_ids": user_ids, "emails": []}
         data = self.req_builder.buildPost(options=options)
         return self.post(url=CONVERSATION_RESOURCE_CREATE, data=data)
 
@@ -1142,7 +1089,13 @@ class Pinterest:
         """
         Sends a new mesage to an already initiated conversation
         """
-        options = {"conversation_id": conversation_id, "text": message, "pin": pin_id}
+        options = {
+            "conversation_id": conversation_id,
+            "text": message,
+            "field_set_key": ["default_with_reactions"],
+        }
+        if pin_id:
+            options["pin"] = pin_id
 
         data = self.req_builder.buildPost(options=options)
         return self.post(url=SEND_MESSAGE, data=data)
@@ -1164,7 +1117,7 @@ class Pinterest:
 
     def _load_conversation_batch(self, conversation_id="", page_size=25):
         next_bookmark = self.bookmark_manager.get_bookmark(
-            primary="conversations", secondary=conversation_id
+            primary="conversation_messages", secondary=conversation_id
         )
 
         if next_bookmark == "-end-":
@@ -1182,7 +1135,7 @@ class Pinterest:
 
         bookmark = response["resource"]["options"]["bookmarks"][0]
         self.bookmark_manager.add_bookmark(
-            primary="conversations", secondary=conversation_id, bookmark=bookmark
+            primary="conversation_messages", secondary=conversation_id, bookmark=bookmark
         )
 
         return response["resource_response"]["data"]
@@ -1264,7 +1217,7 @@ class Pinterest:
 
         return response["resource_response"]["data"]
 
-    def get_section_pins(self, section_id="", page_size=250, reset_bookmark=False):
+    def get_section_pins(self, section_id="", page_size=25, reset_bookmark=False):
         """
         Returns a list of all pins in a board section.
         This method is batched. In order to obtain all pins in the section
@@ -1281,12 +1234,13 @@ class Pinterest:
             return []
 
         options = {
-            "isPrefetch": False,
+            "currentFilter": -1,
             "field_set_key": "react_grid_pin",
             "is_own_profile_pins": True,
             "page_size": page_size,
             "redux_normalize_feed": True,
             "section_id": section_id,
+            "orbac_subject_id": "",
             "bookmarks": [next_bookmark],
         }
 
@@ -1331,16 +1285,3 @@ class Pinterest:
         resp = self.get(url=url).json()
         return resp["resource_response"]["data"]["items"]
 
-    def add_pin_note(self, pin_id, note):
-        """
-        Adds a note to a pin
-        """
-        options = {
-            "url": "/v3/pins/{}/notes/".format(pin_id),
-            "data": {"pin_note_content": note},
-        }
-
-        data = self.req_builder.buildPost(
-            options=options, source_url="/pin/{}/".format(pin_id)
-        )
-        return self.post(url=ADD_PIN_NOTE, data=data)

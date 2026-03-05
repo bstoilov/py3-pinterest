@@ -8,3 +8,5 @@ test.py
 cred_root/**
 py3pin/cred_root/**
 venv/*
+.venv/*
+.env
