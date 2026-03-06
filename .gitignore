@@ -1,6 +1,7 @@
 .idea/**
 py3pin/__pycache__/**
 py3pin/data/**
+data/
 build/**
 dist/**
 py3_pinterest.egg-info/**
