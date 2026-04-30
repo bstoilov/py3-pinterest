@@ -1,27 +1,11 @@
 """Tests for pin create / repin / delete / upload / comment / note actions.
 
 These tests create real pins and then clean them up.
+Uses the shared 'test_board' fixture from conftest.py.
 """
 import os
-import uuid
 import tempfile
 import pytest
-
-PINTEREST_USERNAME = os.environ.get("PINTEREST_USERNAME", "ccocoho")
-
-
-@pytest.fixture(scope="module")
-def test_board(pinterest):
-    """Create a temporary board for pin action tests."""
-    board_name = f"pin_test_{uuid.uuid4().hex[:8]}"
-    resp = pinterest.create_board(name=board_name)
-    board = resp.json()["resource_response"]["data"]
-    yield board
-    # Cleanup
-    try:
-        pinterest.delete_board(board_id=board["id"])
-    except Exception:
-        pass
 
 
 @pytest.fixture(scope="module")
@@ -85,7 +69,6 @@ class TestPinActions:
 
 class TestUploadPin:
 
-    @pytest.mark.xfail(reason="upload-image/ endpoint returns 400; Pinterest now uploads via service worker")
     def test_upload_pin(self, pinterest, test_board):
         """Upload a local image file as a pin."""
         # Create a minimal valid PNG file

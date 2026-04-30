@@ -1,4 +1,5 @@
 import json
+import mimetypes
 import os
 import subprocess
 import tempfile
@@ -6,7 +7,6 @@ import time
 import uuid
 
 import requests
-import mimetypes
 import requests.cookies
 from requests_toolbelt import MultipartEncoder
 from bs4 import BeautifulSoup
@@ -41,6 +41,7 @@ BOARD_PICKER_RESOURCE = (
 )
 BOARDS_RESOURCE = "https://www.pinterest.com/resource/BoardsResource/get/"
 CREATE_BOARD_RESOURCE = "https://www.pinterest.com/resource/BoardResource/create/"
+DELETE_BOARD_RESOURCE = "https://www.pinterest.com/resource/BoardResource/delete/"
 FOLLOW_BOARD_RESOURCE = "https://www.pinterest.com/resource/ApiResource/update/"
 UNFOLLOW_BOARD_RESOURCE = "https://www.pinterest.com/resource/ApiResource/delete/"
 FOLLOW_USER_RESOURCE = "https://www.pinterest.com/resource/UserFollowResource/create/"
@@ -298,15 +299,16 @@ class Pinterest:
         if username is None:
             username = self.username
 
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(
+                primary="boards", secondary=username
+            )
+
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="boards", secondary=username
         )
 
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(
-                    primary="boards", secondary=username
-                )
             return []
 
         options = {
@@ -415,6 +417,11 @@ class Pinterest:
         source_url = "/{}/boards/".format(self.email)
         data = self.req_builder.buildPost(options=options, source_url=source_url)
         return self.post(url=CREATE_BOARD_RESOURCE, data=data)
+
+    def delete_board(self, board_id):
+        options = {"board_id": board_id}
+        data = self.req_builder.buildPost(options=options)
+        return self.post(url=DELETE_BOARD_RESOURCE, data=data)
 
     def follow_board(self, board_id):
         """
@@ -624,21 +631,42 @@ class Pinterest:
         return self.post(url=PIN_RESOURCE_CREATE, data=data)
 
     def upload_pin(
-        self, board_id, image_file, description="", link="", title="", alt_text = "", section_id=None
+        self, board_id, image_file, description="", link="", title="", alt_text="", section_id=None
     ):
         """
-        This method is similar to 'pin' except the image for the pin is a local file.
+        Upload a local image file and create a pin.
+        Uses Pinterest's S3-based upload flow.
         """
-        image_url = self._upload_image(image_file=image_file).json()["image_url"]
-        return self.pin(
-            board_id=board_id,
-            description=description,
-            image_url=image_url,
-            link=link,
-            title=title,
-            alt_text=alt_text,
-            section_id=section_id,
-        )
+        register_resp = self._register_media_upload("image-story-pin").json()
+        upload_data = register_resp["resource_response"]["data"]
+        upload_entry = self._extract_upload_entry(upload_data)
+        upload_params = upload_entry.get("upload_parameters") or upload_entry.get("s3_upload_data")
+        upload_url = upload_entry.get("upload_url", S3_UPLOAD_URL)
+        upload_id = upload_entry.get("upload_id", str(uuid.uuid4()))
+
+        self._upload_media_to_s3(upload_url, upload_params, image_file)
+        upload_status = self._poll_upload_status(upload_id)
+        image_signature = upload_status.get("signature")
+        if not image_signature:
+            raise PinterestUploadError(
+                "Could not get image signature from upload status: " + json.dumps(upload_status)
+            )
+
+        options = {
+            "board_id": board_id,
+            "description": description,
+            "link": link,
+            "title": title,
+            "alt_text": alt_text,
+            "section": section_id,
+            "upload_id": int(upload_id),
+            "image_signature": image_signature,
+            "method": "uploaded",
+            "scrape_metric": {"source": "www_url_scrape"},
+        }
+        source_url = "/pin-creation-tool/"
+        data = self.req_builder.buildPost(options=options, source_url=source_url)
+        return self.post(url=PIN_RESOURCE_CREATE, data=data)
 
     def repin(self, board_id, pin_id, section_id=None):
         """
@@ -1298,11 +1326,10 @@ class Pinterest:
         resp = self.get(url=url).json()
         return resp["resource_response"]["data"]["items"]
 
+    # ── S3-based upload helpers ──────────────────────────────────────────
+
     def _api_resource_post(self, url_path, data, source_url='/pin-creation-tool/'):
-        options = {
-            "url": url_path,
-            "data": data
-        }
+        options = {"url": url_path, "data": data}
         post_data = self.req_builder.buildPost(options=options, source_url=source_url)
         return self.post(url=API_RESOURCE_CREATE, data=post_data)
 
@@ -1313,191 +1340,192 @@ class Pinterest:
             media_info["upload_aux_data"] = {
                 "clips": [{"durationMs": duration_ms, "isFromImage": False, "startTimestampMs": -1}]
             }
-        media_info_list = json.dumps([media_info])
-        data = {"media_info_list": media_info_list}
+        data = {"media_info_list": json.dumps([media_info])}
         return self._api_resource_post(url_path="/v3/media/uploads/register/batch/", data=data)
 
-    def _extract_upload_entry(self, upload_data, label="upload"):
+    def _extract_upload_entry(self, upload_data):
         for key, value in upload_data.items():
             if isinstance(value, dict) and ("s3_upload_data" in value or "upload_parameters" in value):
                 return value
-        raise PinterestUploadError(f"Failed to register {label}. Response: " + json.dumps(upload_data))
+        raise PinterestUploadError(
+            "No upload entry found in registration response: " + json.dumps(upload_data)
+        )
 
-    def _upload_media_to_s3(self, s3_upload_data, file_path):
+    def _upload_media_to_s3(self, upload_url, upload_params, file_path):
         file_name = os.path.basename(file_path)
-        mime_type = mimetypes.guess_type(file_path)[0] or 'video/mp4'
+        mime_type = mimetypes.guess_type(file_path)[0] or "application/octet-stream"
 
         fields = {}
-        for key, value in s3_upload_data.items():
-            if key == 'file':
+        for key, value in upload_params.items():
+            if key == "file":
                 continue
             fields[key] = str(value)
 
-        if 'Content-Type' not in fields:
-            fields['Content-Type'] = 'multipart/form-data'
+        with open(file_path, "rb") as f:
+            fields["file"] = (file_name, f, mime_type)
+            form_data = MultipartEncoder(fields=fields)
 
-        fields['file'] = (file_name, open(file_path, 'rb'), mime_type)
-
-        form_data = MultipartEncoder(fields=fields)
-
-        with requests.Session() as s3_session:
-            s3_resp = s3_session.post(
-                S3_UPLOAD_URL,
-                data=form_data,
-                headers={
-                    "Content-Type": form_data.content_type,
-                    "Content-Length": str(form_data.len),
-                    "Origin": "https://www.pinterest.com",
-                    "Referer": "https://www.pinterest.com/",
-                    "User-Agent": AGENT_STRING,
-                },
-                proxies=self.proxies,
-            )
+            with requests.Session() as s3_session:
+                s3_resp = s3_session.post(
+                    upload_url,
+                    data=form_data,
+                    headers={
+                        "Content-Type": form_data.content_type,
+                        "Content-Length": str(form_data.len),
+                        "Origin": "https://www.pinterest.com",
+                        "Referer": "https://www.pinterest.com/",
+                        "User-Agent": AGENT_STRING,
+                    },
+                    proxies=self.proxies,
+                )
 
         if s3_resp.status_code not in (200, 201, 204):
-            raise PinterestUploadError(f"S3 upload failed with status {s3_resp.status_code}: {s3_resp.text[:500]}")
-
+            raise PinterestUploadError(
+                "S3 upload failed with status {}: {}".format(s3_resp.status_code, s3_resp.text[:500])
+            )
         return s3_resp
 
     def _poll_upload_status(self, upload_id, max_retries=30, interval=2):
-        for attempt in range(max_retries):
+        for _ in range(max_retries):
             options = {"upload_ids": [str(upload_id)]}
-            url = self.req_builder.buildGet(url=VIP_RESOURCE_GET, options=options, source_url="/pin-creation-tool/")
+            url = self.req_builder.buildGet(
+                url=VIP_RESOURCE_GET, options=options, source_url="/pin-creation-tool/"
+            )
             resp = self.get(url=url).json()
-
             data = resp.get("resource_response", {}).get("data", {})
             upload_info = data.get(str(upload_id), data)
 
             if isinstance(upload_info, dict):
                 status = upload_info.get("status", "unknown")
-                signature = upload_info.get("signature") or upload_info.get("video_signature")
-                if signature or status == "succeeded":
+                has_result = (
+                    upload_info.get("signature")
+                    or upload_info.get("video_signature")
+                    or upload_info.get("image_url")
+                )
+                if has_result or status == "succeeded":
                     return upload_info
 
             time.sleep(interval)
 
-        raise PinterestUploadError(f"Upload processing timed out for upload_id: {upload_id}")
+        raise PinterestUploadError("Upload processing timed out for upload_id: {}".format(upload_id))
+
+    # ── Video pin upload ─────────────────────────────────────────────────
+
+    def _get_video_info(self, video_file):
+        result = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", video_file],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            return None
+        try:
+            probe = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            return None
+
+        info = {"duration_ms": int(float(probe["format"]["duration"]) * 1000)}
+        for stream in probe.get("streams", []):
+            if stream.get("codec_type") == "video":
+                info["width"] = stream.get("width", 1080)
+                info["height"] = stream.get("height", 1920)
+                break
+        info.setdefault("width", 1080)
+        info.setdefault("height", 1920)
+        return info
 
     def _extract_video_cover_image(self, video_file):
-        cover_image = tempfile.NamedTemporaryFile(suffix='.jpg', delete=False)
+        cover_image = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
         cover_image.close()
         result = subprocess.run(
-            ['ffmpeg', '-y', '-i', video_file, '-vframes', '1',
-             '-q:v', '2', cover_image.name],
-            capture_output=True, text=True
+            ["ffmpeg", "-y", "-i", video_file, "-vframes", "1", "-q:v", "2", cover_image.name],
+            capture_output=True, text=True,
         )
         if result.returncode != 0:
             os.remove(cover_image.name)
-            raise PinterestUploadError(f"Failed to extract cover image: {result.stderr[:300]}")
+            raise PinterestUploadError("Failed to extract cover image: " + result.stderr[:300])
         return cover_image.name
 
-    def _create_story_pin_draft(self, upload_id, video_signature, title=''):
+    def upload_video_pin(
+        self, video_file, title="", description="", link="",
+        board_id=None, alt_text="", duration_ms=None,
+        width=None, height=None, cover_image_file=None,
+    ):
+        """
+        Upload a video pin (Story Pin / Idea Pin) to Pinterest.
+        Requires ffmpeg/ffprobe on PATH unless duration_ms, width, height,
+        and cover_image_file are all provided.
+        """
+        if duration_ms is None or width is None or height is None:
+            info = self._get_video_info(video_file)
+            if info is None:
+                raise PinterestUploadError(
+                    "Could not probe video. Install ffprobe or provide duration_ms, width, and height."
+                )
+            duration_ms = duration_ms or info["duration_ms"]
+            width = width or info["width"]
+            height = height or info["height"]
+
+        # Pinterest requires 9:16 (0.56) for story/idea pin canvas
+        aspect_ratio = 0.56
+
+        register_resp = self._register_media_upload("video-story-pin", duration_ms).json()
+        upload_data = register_resp["resource_response"]["data"]
+        upload_entry = self._extract_upload_entry(upload_data)
+        upload_params = upload_entry.get("upload_parameters") or upload_entry.get("s3_upload_data")
+        upload_url = upload_entry.get("upload_url", S3_UPLOAD_URL)
+        upload_id = upload_entry.get("upload_id", str(uuid.uuid4()))
+
+        self._upload_media_to_s3(upload_url, upload_params, video_file)
+
+        upload_status = self._poll_upload_status(upload_id)
+        video_signature = upload_status.get("signature") or upload_status.get("video_signature")
+
+        if cover_image_file:
+            cover_path = cover_image_file
+            remove_cover = False
+        else:
+            cover_path = self._extract_video_cover_image(video_file)
+            remove_cover = True
+
+        try:
+            img_register_resp = self._register_media_upload("image-story-pin").json()
+            img_upload_data = img_register_resp["resource_response"]["data"]
+            img_upload_entry = self._extract_upload_entry(img_upload_data)
+            img_upload_params = img_upload_entry.get("upload_parameters") or img_upload_entry.get("s3_upload_data")
+            img_upload_url = img_upload_entry.get("upload_url", S3_UPLOAD_URL)
+            img_upload_id = img_upload_entry.get("upload_id")
+
+            self._upload_media_to_s3(img_upload_url, img_upload_params, cover_path)
+            img_status = self._poll_upload_status(img_upload_id)
+            pin_image_signature = img_status.get("signature") or img_status.get("video_signature")
+        finally:
+            if remove_cover and os.path.exists(cover_path):
+                os.remove(cover_path)
+
         story_pin = {
-            "metadata": {"canvas_aspect_ratio": 1, "pin_title": title},
+            "metadata": {
+                "pin_title": title,
+                "pin_image_signature": pin_image_signature,
+                "canvas_aspect_ratio": aspect_ratio,
+            },
             "pages": [{
                 "blocks": [{
                     "block_style": {"height": 100, "width": 100, "x_coord": 0, "y_coord": 0},
                     "tracking_id": str(upload_id),
                     "video_signature": video_signature,
-                    "type": 3
-                }],
-                "layout": 0,
-                "style": {"background_color": "#FFFFFF"}
-            }]
-        }
-        data = {
-            "is_comments_allowed": True,
-            "is_shopping_rec_allowed": True,
-            "story_pin": json.dumps(story_pin),
-            "topic_tags": "[]",
-            "tagged_products": None,
-            "video_cover_image_time_offset": 0
-        }
-        return self._api_resource_post(url_path="/v3/storypins/drafts/", data=data)
-
-    def upload_video_pin(
-        self, video_file, title='', description='', link='',
-        board_id=None, alt_text='', duration_ms=None,
-    ):
-        """
-        Uploads a video pin (Story Pin / Idea Pin) to Pinterest.
-        :param video_file: path to local video file
-        :param title: pin title
-        :param description: pin description
-        :param link: link to include
-        :param board_id: target board id (optional for idea pins)
-        :param alt_text: alt text for accessibility
-        :param duration_ms: video duration in milliseconds. If None, will try to extract with ffprobe.
-        :return: response from Pinterest
-        """
-        if duration_ms is None:
-            try:
-                result = subprocess.run(
-                    ['ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_format', video_file],
-                    capture_output=True, text=True
-                )
-                info = json.loads(result.stdout)
-                duration_ms = int(float(info['format']['duration']) * 1000)
-            except Exception:
-                raise PinterestUploadError("Could not determine video duration. Please provide duration_ms parameter.")
-
-        register_resp = self._register_media_upload("video-story-pin", duration_ms).json()
-        upload_data = register_resp["resource_response"]["data"]
-
-        upload_entry = self._extract_upload_entry(upload_data, "video upload")
-
-        s3_upload_data = upload_entry.get("s3_upload_data", upload_entry.get("upload_parameters"))
-        pinterest_upload_id = upload_entry.get("upload_id", str(uuid.uuid4()))
-
-        self._upload_media_to_s3(s3_upload_data, video_file)
-
-        upload_status = self._poll_upload_status(pinterest_upload_id)
-        video_signature = upload_status.get("signature") or upload_status.get("video_signature")
-
-        self._create_story_pin_draft(pinterest_upload_id, video_signature, title)
-
-        cover_image_path = self._extract_video_cover_image(video_file)
-        try:
-            img_register_resp = self._register_media_upload("image-story-pin").json()
-            img_upload_data = img_register_resp["resource_response"]["data"]
-
-            img_upload_entry = self._extract_upload_entry(img_upload_data, "image upload")
-
-            img_s3_data = img_upload_entry.get("s3_upload_data", img_upload_entry.get("upload_parameters"))
-            img_upload_id = img_upload_entry.get("upload_id")
-
-            self._upload_media_to_s3(img_s3_data, cover_image_path)
-
-            img_status = self._poll_upload_status(img_upload_id)
-            pin_image_signature = img_status.get("signature") or img_status.get("video_signature")
-        finally:
-            if os.path.exists(cover_image_path):
-                os.remove(cover_image_path)
-
-        story_pin_publish = {
-            "metadata": {
-                "pin_title": title,
-                "pin_image_signature": pin_image_signature,
-                "canvas_aspect_ratio": 1
-            },
-            "pages": [{
-                "blocks": [{
-                    "block_style": {"height": 100, "width": 100, "x_coord": 0, "y_coord": 0},
-                    "tracking_id": str(pinterest_upload_id),
-                    "video_signature": video_signature,
-                    "type": 3
+                    "type": 3,
                 }],
                 "clips": [{
                     "clip_type": 1,
                     "end_time_ms": -1,
                     "is_converted_from_image": False,
-                    "source_media_height": 1080,
-                    "source_media_width": 1080,
-                    "start_time_ms": -1
+                    "source_media_height": height,
+                    "source_media_width": width,
+                    "start_time_ms": -1,
                 }],
                 "layout": 0,
-                "style": {"background_color": "#FFFFFF"}
-            }]
+                "style": {"background_color": "#FFFFFF"},
+            }],
         }
 
         options = {
@@ -1508,14 +1536,12 @@ class Pinterest:
             "is_removable": False,
             "is_unified_builder": True,
             "link": link,
-            "orbac_subject_id": "",
-            "story_pin": json.dumps(story_pin_publish),
-            "user_mention_tags": "[]"
+            "story_pin": json.dumps(story_pin),
+            "user_mention_tags": "[]",
         }
         if board_id:
             options["board_id"] = board_id
 
-        source_url = "/pin-creation-tool/"
-        data = self.req_builder.buildPost(options=options, source_url=source_url)
+        data = self.req_builder.buildPost(options=options, source_url="/pin-creation-tool/")
         return self.post(url=STORY_PIN_RESOURCE_CREATE, data=data)
 
