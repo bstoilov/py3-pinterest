@@ -9,6 +9,8 @@ PINTEREST_EMAIL = os.environ["PINTEREST_EMAIL"]
 PINTEREST_PASSWORD = os.environ["PINTEREST_PASSWORD"]
 PINTEREST_USERNAME = os.environ["PINTEREST_USERNAME"]
 
+TEST_BOARD_NAME = "test"
+
 
 @pytest.fixture(scope="session")
 def pinterest():
@@ -34,6 +36,22 @@ def pinterest():
         print("\n[conftest] Reusing existing session cookies.")
 
     return client
+
+
+@pytest.fixture(scope="session")
+def test_board(pinterest):
+    """
+    Session-scoped board named 'test'.
+    Looks for an existing board with that name; creates one if missing.
+    The board is NOT deleted after tests so it can be reused across runs.
+    """
+    boards = pinterest.boards_all(username=PINTEREST_USERNAME)
+    for b in boards:
+        if b.get("name") == TEST_BOARD_NAME:
+            return b
+
+    resp = pinterest.create_board(name=TEST_BOARD_NAME)
+    return resp.json()["resource_response"]["data"]
 
 
 def _has_valid_session(client):

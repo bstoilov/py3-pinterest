@@ -11,3 +11,5 @@ py3pin/cred_root/**
 venv/*
 .venv/*
 .env
+test-files/
+.DS_Store
