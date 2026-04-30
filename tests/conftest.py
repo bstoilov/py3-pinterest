@@ -45,7 +45,7 @@ def test_board(pinterest):
     Looks for an existing board with that name; creates one if missing.
     The board is NOT deleted after tests so it can be reused across runs.
     """
-    boards = pinterest.boards_all(username=PINTEREST_USERNAME)
+    boards = pinterest.boards(username=PINTEREST_USERNAME, page_size=250, reset_bookmark=True)
     for b in boards:
         if b.get("name") == TEST_BOARD_NAME:
             return b

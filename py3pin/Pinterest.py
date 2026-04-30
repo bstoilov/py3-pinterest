@@ -41,6 +41,7 @@ BOARD_PICKER_RESOURCE = (
 )
 BOARDS_RESOURCE = "https://www.pinterest.com/resource/BoardsResource/get/"
 CREATE_BOARD_RESOURCE = "https://www.pinterest.com/resource/BoardResource/create/"
+DELETE_BOARD_RESOURCE = "https://www.pinterest.com/resource/BoardResource/delete/"
 FOLLOW_BOARD_RESOURCE = "https://www.pinterest.com/resource/ApiResource/update/"
 UNFOLLOW_BOARD_RESOURCE = "https://www.pinterest.com/resource/ApiResource/delete/"
 FOLLOW_USER_RESOURCE = "https://www.pinterest.com/resource/UserFollowResource/create/"
@@ -298,15 +299,16 @@ class Pinterest:
         if username is None:
             username = self.username
 
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(
+                primary="boards", secondary=username
+            )
+
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="boards", secondary=username
         )
 
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(
-                    primary="boards", secondary=username
-                )
             return []
 
         options = {
@@ -415,6 +417,11 @@ class Pinterest:
         source_url = "/{}/boards/".format(self.email)
         data = self.req_builder.buildPost(options=options, source_url=source_url)
         return self.post(url=CREATE_BOARD_RESOURCE, data=data)
+
+    def delete_board(self, board_id):
+        options = {"board_id": board_id}
+        data = self.req_builder.buildPost(options=options)
+        return self.post(url=DELETE_BOARD_RESOURCE, data=data)
 
     def follow_board(self, board_id):
         """
