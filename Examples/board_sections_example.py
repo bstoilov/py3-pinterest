@@ -7,15 +7,14 @@ pinterest = Pinterest(email='email',
 
 
 def print_all_section_pin_ids():
-    boards = pinterest.boards()
+    boards = pinterest.boards_all()
     for board in boards:
-        target_board = board
-        sections = pinterest.get_board_sections(board_id=target_board['id'])
+        print(board['name'])
+        sections = pinterest.get_board_sections(board_id=board['id'], reset_bookmark=True)
 
-        print(target_board['name'])
         for section in sections:
             print(section['slug'])
-            section_pins = pinterest.get_section_pins(section_id=section['id'])
+            section_pins = pinterest.get_section_pins(section_id=section['id'], reset_bookmark=True)
             while section_pins:
                 for sec_pin in section_pins:
                     print(sec_pin['id'])

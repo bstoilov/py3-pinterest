@@ -5,28 +5,38 @@ pinterest = Pinterest(email='email',
                       username='username',
                       cred_root='cred_root')
 
-# to release
-# python3 setup.py sdist & twine upload --skip-existing dist/*
-# proxies example:
-# proxies = {"http":"http://username:password@proxy_ip:proxy_port"}
-# Pinterest(email='emai', password='pass', username='name', cred_root='cred_root', proxies=proxies)
+# Proxies example:
+# proxies = {"http": "http://username:password@proxy_ip:proxy_port"}
+# pinterest = Pinterest(email='email', password='pass', username='name', cred_root='cred_root', proxies=proxies)
 
-
-# login will obtain and store cookies for further use, they last around 15 days.
-# NOTE: Since login will store the cookies in local file you don't need to call it more then 3-4 times a month.
+# Login obtains and stores cookies for further use, they last around 15 days.
+# After the first successful login, cookies are persisted to disk and reused automatically.
 # pinterest.login()
+
+
+# ── User ──────────────────────────────────────────────────────────────
 
 def get_user_profile():
     return pinterest.get_user_overview(username='username')
 
 
+def get_user_pins_batched(username=None, max_items=500):
+    pins = []
+    pin_batch = pinterest.get_user_pins(username=username, reset_bookmark=True)
+    while len(pin_batch) > 0 and len(pins) < max_items:
+        pins += pin_batch
+        pin_batch = pinterest.get_user_pins(username=username)
+    return pins
+
+
+# ── Boards ────────────────────────────────────────────────────────────
+
 def get_user_boards_batched(username=None):
     boards = []
-    board_batch = pinterest.boards(username=username)
+    board_batch = pinterest.boards(username=username, reset_bookmark=True)
     while len(board_batch) > 0:
         boards += board_batch
         board_batch = pinterest.boards(username=username)
-
     return boards
 
 
@@ -34,92 +44,57 @@ def get_boards(username=None):
     return pinterest.boards_all(username=username)
 
 
+def create_board(name='', description='', category='other', privacy='public', layout='default'):
+    return pinterest.create_board(name=name, description=description, category=category,
+                                  privacy=privacy, layout=layout)
+
+
+def delete_board(board_id=''):
+    return pinterest.delete_board(board_id=board_id)
+
+
+# ── Board Sections ────────────────────────────────────────────────────
+
+def create_board_section(board_id='', section_name=''):
+    return pinterest.create_board_section(board_id=board_id, section_name=section_name)
+
+
+def delete_board_section(section_id=''):
+    return pinterest.delete_board_section(section_id=section_id)
+
+
+def get_board_sections(board_id=''):
+    return pinterest.get_board_sections(board_id=board_id, reset_bookmark=True)
+
+
+def get_board_section_feed(section_id=''):
+    return pinterest.get_section_pins(section_id=section_id, reset_bookmark=True)
+
+
+# ── Board Feed & Recommendations ─────────────────────────────────────
+
 def get_board_pins_batched(board_id=''):
     board_feed = []
-    feed_batch = pinterest.board_feed(board_id=board_id)
+    feed_batch = pinterest.board_feed(board_id=board_id, reset_bookmark=True)
     while len(feed_batch) > 0:
         board_feed += feed_batch
         feed_batch = pinterest.board_feed(board_id=board_id)
-
     return board_feed
-
-
-def delete_pin(pin_id=''):
-    # if pin doesn't exist or you have no rights to delete http 404 or 401 will be thrown
-    return pinterest.delete_pin(pin_id=pin_id)
-
-
-def follow(user_id=''):
-    # even if you already follow this user a successful message is returned
-    return pinterest.follow_user(user_id=user_id)
-
-
-def unfollow(user_id=''):
-    # even if you don't follow this user a successful message is returned
-    return pinterest.unfollow_user(user_id=user_id)
-
-
-def get_following_batched(username=None, max_items=500):
-    # you can get following on any user, default is current user
-    # pinterest.get_following(username='some_user')
-
-    following = []
-    following_batch = pinterest.get_following(username=username)
-    while len(following_batch) > 0 and len(following) < max_items:
-        following += following_batch
-        following_batch = pinterest.get_following(username=username)
-
-    return following
-
-
-def get_following(username=None):
-    # Gets full following list of a user
-    return pinterest.get_following_all(username=username)
-
-
-def get_followers_batched(username=None, max_items=500):
-    followers = []
-    followers_batch = pinterest.get_user_followers(username=username)
-    while len(followers_batch) > 0 and len(followers) < max_items:
-        followers += followers_batch
-        followers_batch = pinterest.get_user_followers(username=username)
-
-    return followers
-
-
-def get_followers(username=None):
-    # Gets a full list of user followers
-    return pinterest.get_user_followers_all(username=username)
-
-
-def get_home_feed(max_items=100):
-    # This is what pinterest displays on your home page
-    # useful for auto repins
-    home_feed_pins = []
-    home_feed_batch = pinterest.home_feed()
-    while len(home_feed_batch) > 0 and len(home_feed_pins) < max_items:
-        home_feed_pins += home_feed_batch
-        home_feed_batch = pinterest.home_feed()
-
-    return home_feed_pins
-
-
-def repin(pin_id='', board_id='', section_id=None):
-    return pinterest.repin(board_id=board_id, pin_id=pin_id, section_id=section_id)
-
-
-def get_website_pinnable_images():
-    # Pinterest endpoint that gives all images on website
-    return pinterest.get_pinnable_images(url='https://www.tumblr.com/search/food')
 
 
 def get_board_pin_recommendations(board_id='', max_items=100):
     rec_pins = []
-    rec_batch = pinterest.board_recommendations(board_id=board_id)
+    rec_batch = pinterest.board_recommendations(board_id=board_id, reset_bookmark=True)
     while len(rec_batch) > 0 and len(rec_pins) < max_items:
         rec_pins += rec_batch
-
+        rec_batch = pinterest.board_recommendations(board_id=board_id)
     return rec_pins
+
+
+# ── Pins ──────────────────────────────────────────────────────────────
+
+def load_pin_by_id(pin_id=''):
+    return pinterest.load_pin(pin_id=pin_id)
 
 
 def pin(board_id='',
@@ -135,7 +110,7 @@ def pin(board_id='',
 
 def upload_pin(board_id='',
                section_id=None,
-               image_path='my_imag.png',
+               image_path='my_image.png',
                description='this is auto pin',
                title='a bot did this',
                link='https://www.google.com/'):
@@ -143,17 +118,45 @@ def upload_pin(board_id='',
                                 description=description, title=title, link=link)
 
 
-def search(max_items=100, scope='boards', query='food'):
-    # After change in pinterest API, you can no longer search for users
-    # Instead you need to search for something else and extract the user data from there.
-    # current pinterest scopes are: pins, buyable_pins, my_pins, videos, boards
-    results = []
-    search_batch = pinterest.search(scope=scope, query=query)
-    while len(search_batch) > 0 and len(results) < max_items:
-        results += search_batch
-        search_batch = pinterest.search(scope=scope, query=query)
+def upload_video(board_id='',
+                 video_path='my_video.mov',
+                 title='video pin',
+                 description='uploaded with py3-pinterest',
+                 link='https://www.google.com/'):
+    return pinterest.upload_video_pin(board_id=board_id, video_file=video_path,
+                                      title=title, description=description, link=link)
 
-    return results
+
+def delete_pin(pin_id=''):
+    return pinterest.delete_pin(pin_id=pin_id)
+
+
+def repin(pin_id='', board_id='', section_id=None):
+    return pinterest.repin(board_id=board_id, pin_id=pin_id, section_id=section_id)
+
+
+# ── Comments ──────────────────────────────────────────────────────────
+
+def comment_on_pin(pin_id='', comment_text='comment'):
+    return pinterest.comment(pin_id=pin_id, text=comment_text)
+
+
+def delete_comment(pin_id='', comment_id=''):
+    return pinterest.delete_comment(pin_id=pin_id, comment_id=comment_id)
+
+
+def get_pin_comments(pin_id=''):
+    return pinterest.get_comments(pin_id=pin_id, reset_bookmark=True)
+
+
+# ── Follow / Unfollow ────────────────────────────────────────────────
+
+def follow(user_id=''):
+    return pinterest.follow_user(user_id=user_id)
+
+
+def unfollow(user_id=''):
+    return pinterest.unfollow_user(user_id=user_id)
 
 
 def follow_board(board_id=''):
@@ -164,13 +167,74 @@ def unfollow_board(board_id=''):
     return pinterest.unfollow_board(board_id=board_id)
 
 
+def get_following_batched(username=None, max_items=500):
+    following = []
+    following_batch = pinterest.get_following(username=username, reset_bookmark=True)
+    while len(following_batch) > 0 and len(following) < max_items:
+        following += following_batch
+        following_batch = pinterest.get_following(username=username)
+    return following
+
+
+def get_following(username=None):
+    return pinterest.get_following_all(username=username)
+
+
+def get_followers_batched(username=None, max_items=500):
+    followers = []
+    followers_batch = pinterest.get_user_followers(username=username, reset_bookmark=True)
+    while len(followers_batch) > 0 and len(followers) < max_items:
+        followers += followers_batch
+        followers_batch = pinterest.get_user_followers(username=username)
+    return followers
+
+
+def get_followers(username=None):
+    return pinterest.get_user_followers_all(username=username)
+
+
+# ── Home Feed ─────────────────────────────────────────────────────────
+
+def get_home_feed(max_items=100):
+    home_feed_pins = []
+    home_feed_batch = pinterest.home_feed(reset_bookmark=True)
+    while len(home_feed_batch) > 0 and len(home_feed_pins) < max_items:
+        home_feed_pins += home_feed_batch
+        home_feed_batch = pinterest.home_feed()
+    return home_feed_pins
+
+
+# ── Search ────────────────────────────────────────────────────────────
+
+def search(max_items=100, scope='boards', query='food'):
+    results = []
+    search_batch = pinterest.search(scope=scope, query=query, reset_bookmark=True)
+    while len(search_batch) > 0 and len(results) < max_items:
+        results += search_batch
+        search_batch = pinterest.search(scope=scope, query=query)
+    return results
+
+
+def visual_search(pin_id=''):
+    pin_data = pinterest.load_pin(pin_id=pin_id)
+    return pinterest.visual_search(pin_data=pin_data, reset_bookmark=True)
+
+
+def type_ahead(term="apple"):
+    return pinterest.type_ahead(term=term)
+
+
+def get_website_pinnable_images():
+    return pinterest.get_pinnable_images(url='https://www.tumblr.com/search/food')
+
+
+# ── Invites ───────────────────────────────────────────────────────────
+
 def invite(board_id='', target_user_id=''):
-    # If user is already invited to the board, you get 403 error.
     return pinterest.invite(board_id=board_id, user_id=target_user_id)
 
 
 def delete_invite(board_id='', target_user_id=''):
-    # If user is not invited to the board, you get 403 error.
     return pinterest.delete_invite(board_id=board_id, invited_user_id=target_user_id)
 
 
@@ -178,57 +242,11 @@ def get_board_invites(board_id=''):
     return pinterest.get_board_invites(board_id=board_id)
 
 
-def comment_on_pin(pin_id='', comment_text='comment'):
-    # Forbidden and not found are thrown if you don't have permissions or comment does not exist
-    return pinterest.comment(pin_id=pin_id, text=comment_text)
+def get_board_invites_all(board_id=''):
+    return pinterest.get_board_invites_all(board_id=board_id)
 
 
-def delete_comment(pin_id='', comment_id=''):
-    # Forbidden and not found are thrown if you don't have permissions or comment does not exist
-    return pinterest.delete_comment(pin_id=pin_id, comment_id=comment_id)
+# ── Notes ─────────────────────────────────────────────────────────────
 
-
-def get_pin_comments(pin_id=''):
-    return pinterest.get_comments(pin_id=pin_id)
-
-
-def load_pin_by_id(pin_id=''):
-    return pinterest.load_pin(pin_id=pin_id)
-
-
-# to pin/repin to section you just need to provide section id parameter to the respective function
-# repin(board_id=board_id, section_id=section_id, pin_id='pin_id')
-# pin(board_id=board_id, section_id=section_id)
-
-
-# Careful with category names. They have different names than as shown on Pinterest
-def create_board(name='',
-                 description='',
-                 category='other',
-                 privacy='public',
-                 layout='default'):
-    return pinterest.create_board(name=name, description=description, category=category,
-                                  privacy=privacy, layout=layout)
-
-
-def create_board_section(board_id='', section_name=''):
-    return pinterest.create_board_section(board_id=board_id, section_name=section_name)
-
-
-def delete_board_section(section_id=''):
-    return pinterest.delete_board_section(section_id=section_id)
-
-
-def get_board_sections(board_id=''):
-    return pinterest.get_board_sections(board_id=board_id)
-
-
-def get_board_section_feed(section_id=''):
-    return pinterest.get_section_pins(section_id=section_id)
-
-
-def type_ahead(term="apple"):
-    return pinterest.type_ahead(term=term)
-
-def add_pin_note(pin_id, note='test note'):
+def add_pin_note(pin_id='', note='test note'):
     pinterest.add_pin_note(pin_id=pin_id, note=note)
