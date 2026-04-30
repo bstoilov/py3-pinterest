@@ -227,18 +227,26 @@ class Pinterest:
         driver.get("https://pinterest.com/login")
 
         try:
+            # Dismiss cookie consent banner if present (e.g. EU/GDPR regions)
+            try:
+                cookie_btn = WebDriverWait(driver, 5).until(
+                    EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Accept')]"))
+                )
+                cookie_btn.click()
+            except Exception:
+                pass
+
             WebDriverWait(driver, wait_time).until(
                 EC.element_to_be_clickable((By.ID, "email"))
             )
 
-            driver.find_element(by = By.ID, value='email').send_keys(self.email)
-            driver.find_element(by= By.ID, value="password").send_keys(self.password)
+            driver.find_element(by=By.ID, value='email').send_keys(self.email)
+            driver.find_element(by=By.ID, value="password").send_keys(self.password)
 
-            logins = driver.find_elements(by=By.XPATH, value="//*[contains(text(), 'Log in')]")
-
-            for login in logins:
-                if login.is_displayed():
-                    login.click()
+            login_button = WebDriverWait(driver, wait_time).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, 'button[type="submit"]'))
+            )
+            login_button.click()
 
             WebDriverWait(driver, wait_time).until(
                 EC.invisibility_of_element((By.ID, "email"))
@@ -255,8 +263,8 @@ class Pinterest:
             print("Successfully logged in with account " + self.email)
         except Exception as e:
             print("Failed to login", e)
-
-        driver.close()
+        finally:
+            driver.quit()
 
     def logout(self):
         """
@@ -366,13 +374,14 @@ class Pinterest:
         else:
             own_profile = False
 
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(primary="pins", secondary=username)
+
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="pins", secondary=username
         )
 
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(primary="pins", secondary=username)
             return []
 
         options = {
@@ -475,15 +484,16 @@ class Pinterest:
         if username is None:
             username = self.username
 
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(
+                primary="following", secondary=username
+            )
+
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="following", secondary=username
         )
 
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(
-                    primary="following", secondary=username
-                )
             return []
 
         source_url = "/{}/_following/".format(self.email)
@@ -540,15 +550,16 @@ class Pinterest:
         if username is None:
             username = self.username
 
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(
+                primary="followers", secondary=username
+            )
+
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="followers", secondary=username
         )
 
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(
-                    primary="followers", secondary=username
-                )
             return []
 
         options = {
@@ -763,15 +774,16 @@ class Pinterest:
         """
         pin_data = self.load_pin(pin_id=pin_id)
 
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(
+                primary="pin_comments", secondary=pin_id
+            )
+
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="pin_comments", secondary=pin_id
         )
 
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(
-                    primary="pin_comments", secondary=pin_id
-                )
             return []
 
         options = {
@@ -900,14 +912,16 @@ class Pinterest:
             pin_id, x, y, w, h
         )
 
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(
+                primary="visual_search", secondary=source_url
+            )
+
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="visual_search", secondary=source_url
         )
+
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(
-                    primary="visual_search", secondary=source_url
-                )
             return []
 
         options = {
@@ -943,13 +957,14 @@ class Pinterest:
         :return: list of search results
         """
 
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(primary="search", secondary=query)
+
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="search", secondary=query
         )
 
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(primary="search", secondary=query)
             return []
 
         terms = query.split(" ")
@@ -992,15 +1007,16 @@ class Pinterest:
         :param page_size: batch size
         :return: list of board recommendations
         """
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(
+                primary="boards", secondary=board_id
+            )
+
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="boards", secondary=board_id
         )
 
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(
-                    primary="boards", secondary=board_id
-                )
             return []
 
         options = {
@@ -1051,10 +1067,12 @@ class Pinterest:
         :param page_size:
         :return:
         """
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(primary="home_feed")
+
         next_bookmark = self.bookmark_manager.get_bookmark(primary="home_feed")
+
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(primary="home_feed")
             return []
 
         options = {
@@ -1086,15 +1104,16 @@ class Pinterest:
         This method is batched. In order to obtain all pins in a board
         you need to call it until an empty list is returned.
         """
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(
+                primary="board_feed", secondary=board_id
+            )
+
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="board_feed", secondary=board_id
         )
 
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(
-                    primary="board_feed", secondary=board_id
-                )
             return []
 
         options = {
@@ -1228,23 +1247,26 @@ class Pinterest:
         data = self.req_builder.buildPost(options=options)
         return self.post(url=BOARD_SECTION_RESOURCE, data=data)
 
-    def get_board_sections(self, board_id="", reset_bookmark=False):
+    def get_board_sections(self, board_id="", page_size=100, reset_bookmark=False):
         """
         Obtains a list of all sections of a board
         """
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(
+                primary="board_sections", secondary=board_id
+            )
+
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="board_sections", secondary=board_id
         )
+
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(
-                    primary="board_sections", secondary=board_id
-                )
             return []
 
         options = {
             "isPrefetch": False,
             "board_id": board_id,
+            "page_size": page_size,
             "redux_normalize_feed": True,
             "bookmarks": [next_bookmark],
         }
@@ -1264,14 +1286,16 @@ class Pinterest:
         This method is batched. In order to obtain all pins in the section
         you need to call it until an empty list is returned.
         """
+        if reset_bookmark:
+            self.bookmark_manager.reset_bookmark(
+                primary="section_pins", secondary=section_id
+            )
+
         next_bookmark = self.bookmark_manager.get_bookmark(
             primary="section_pins", secondary=section_id
         )
+
         if next_bookmark == "-end-":
-            if reset_bookmark:
-                self.bookmark_manager.reset_bookmark(
-                    primary="section_pins", secondary=section_id
-                )
             return []
 
         options = {
