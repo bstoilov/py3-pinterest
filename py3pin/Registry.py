@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 
 
 class Registry:
@@ -11,18 +10,16 @@ class Registry:
         self.root = root
         self.username = username
 
-        if os.path.isdir(self._get_cred_file_path()):
-            shutil.rmtree(self._get_cred_file_path())
-
         if not os.path.exists(root):
             os.makedirs(root)
 
-        try:
-            with open(self._get_cred_file_path()) as f:
-                content = f.read()
-                self.cookies = json.loads(content)
-        except Exception as e:
-            print("No credentials stored", e)
+        cred_path = self._get_cred_file_path()
+        if os.path.isfile(cred_path):
+            try:
+                with open(cred_path) as f:
+                    self.cookies = json.loads(f.read())
+            except (json.JSONDecodeError, IOError):
+                pass
 
     def get(self, cookie_name):
         return self.cookies[cookie_name]
@@ -39,11 +36,8 @@ class Registry:
         self._persist()
 
     def _persist(self):
-        cred_file_path = self._get_cred_file_path()
-        print("Reading credential from " + cred_file_path)
-        f = open(cred_file_path, "w")
-        f.write(json.dumps(self.cookies))
-        f.close()
+        with open(self._get_cred_file_path(), "w") as f:
+            f.write(json.dumps(self.cookies))
 
     def _get_cred_file_path(self):
         return os.path.join(self.root, self.username)

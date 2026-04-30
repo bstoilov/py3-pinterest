@@ -18,7 +18,7 @@ URL = 'https://github.com/bstoilov/py3-pinterest'
 EMAIL = 'boriostoilov@gmail.com'
 AUTHOR = 'Borislav Stoilov'
 REQUIRES_PYTHON = '>=3.5.0'
-REQUIRED = ['requests', 'beautifulsoup4', 'requests-toolbelt', 'selenium', 'webdriver-manager']
+REQUIRED = ['requests', 'beautifulsoup4', 'requests-toolbelt', 'selenium>=4.0.0', 'webdriver-manager>=4.0.0']
 
 here = os.path.abspath(os.path.dirname(__file__))
 
